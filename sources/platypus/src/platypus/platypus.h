@@ -3,6 +3,10 @@
 
 #include <stdbool.h>
 
+typedef struct Plt_Color8 {
+	unsigned char r, g, b;
+} Plt_Color8;
+
 typedef enum Plt_Application_Option {
 	Plt_Application_Option_None = 0
 } Plt_Application_Option;
