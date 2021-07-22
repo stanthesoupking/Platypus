@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define plt_min(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define plt_max(X, Y) (((X) > (Y)) ? (X) : (Y))
+
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define plt_assert(cond, message) \
