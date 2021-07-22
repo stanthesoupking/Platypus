@@ -5,7 +5,7 @@
 int main(int argc, char **argv) {
 	printf("Hello\n");
 
-	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", Plt_Application_Option_None);
+	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, Plt_Application_Option_None);
 
 	while (!plt_application_should_close(app)) {
 		plt_application_update(app);
