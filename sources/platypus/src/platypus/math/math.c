@@ -1,6 +1,7 @@
 #include "platypus/platypus.h"
 #include "platypus/base/neon.h"
 #include "platypus/base/macros.h"
+#include "math.h"
 
 Plt_Matrix4x4f plt_matrix_identity() {
 	return (Plt_Matrix4x4f) {{
@@ -44,16 +45,40 @@ Plt_Matrix4x4f plt_matrix_scale_make(Plt_Vector3f scale) {
 	}};
 }
 
+Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate) {
+	Plt_Matrix4x4f rx = {{
+		{ 1, 0, 0, 0 },
+		{ 0, cosf(rotate.x), sinf(rotate.x), 0 },
+		{ 0, -sinf(rotate.x), cosf(rotate.x), 0 },
+		{ 0, 0, 0, 1 }
+	}};
+
+	Plt_Matrix4x4f ry = {{
+		{ cosf(rotate.y), 0, -sinf(rotate.y), 0 },
+		{ 0, 1, 0, 0 },
+		{ sinf(rotate.y), 0, cosf(rotate.y), 0 },
+		{0, 0, 0, 1}
+	}};
+
+	Plt_Matrix4x4f rz = {{
+		{ cosf(rotate.z), -sinf(rotate.z), 0, 0 },
+		{ sinf(rotate.z), cosf(rotate.z), 0, 0 },
+		{ 0, 0, 1, 0 },
+		{ 0, 0, 0, 1 }
+	}};
+	
+	return plt_matrix_multiply(plt_matrix_multiply(rz, ry), rx);
+}
+
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
-	const float32x4_t zero = {};
+	float32x4_t va = {v.x, v.y, v.z, v.w};
+	
+	// TODO: Optimise this
+	float32x4_t result = {};
+	result = vmlaq_f32(result, vld1q_f32(m.columns[0]), (float32x4_t){v.x,v.x,v.x,v.x});
+	result = vmlaq_f32(result, vld1q_f32(m.columns[1]), (float32x4_t){v.y,v.y,v.y,v.y});
+	result = vmlaq_f32(result, vld1q_f32(m.columns[2]), (float32x4_t){v.z,v.z,v.z,v.z});
+	result = vmlaq_f32(result, vld1q_f32(m.columns[3]), (float32x4_t){v.w,v.w,v.w,v.w});
 
-	float32x4_t va = plt_cast(float32x4_t, v);
-
-	for (unsigned int y = 0; y < 4; ++y) {
-		float32x4_t cb = vld1q_f32(m.columns[y]);
-		float32_t dot = vaddvq_f32(vmlaq_f32(zero, va, cb));
-		va[y] = dot;
-	}
-
-	return plt_cast(Plt_Vector4f, va);
+	return (Plt_Vector4f){result[0], result[1], result[2], result[3]};
 }

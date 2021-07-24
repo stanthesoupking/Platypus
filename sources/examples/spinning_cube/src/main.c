@@ -9,16 +9,24 @@ int main(int argc, char **argv) {
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
 	Plt_Mesh *triangle = plt_mesh_create(3);
-	plt_mesh_set_position(triangle, 0, (Plt_Vector3f){-1, -1, 0});
-	plt_mesh_set_position(triangle, 1, (Plt_Vector3f){ 1, -1, 0});
-	plt_mesh_set_position(triangle, 2, (Plt_Vector3f){-1,  1, 0});
+	plt_mesh_set_position(triangle, 0, (Plt_Vector3f){-0.5, -0.5 , 0});
+	plt_mesh_set_position(triangle, 1, (Plt_Vector3f){ 0.5, -0.5, 0});
+	plt_mesh_set_position(triangle, 2, (Plt_Vector3f){-0.5,  0.5, 0});
+	
+	float r = 0.0f;
 
 	while (!plt_application_should_close(app)) {
+		r += 0.01f;
+		
 		plt_application_update(app);
 		
 		// Render
+		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){0,0,r});
+		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.5f, 0.5f, 1.0f});
+		Plt_Matrix4x4f model = plt_matrix_multiply(rotate, scale);
+		
 		plt_renderer_clear(renderer, plt_color8_make(0,0,0,255));
-		plt_renderer_set_model_matrix(renderer, plt_matrix_scale_make((Plt_Vector3f){0.5f, 0.5f, 1.0f}));
+		plt_renderer_set_model_matrix(renderer, model);
 		plt_renderer_draw_mesh(renderer, triangle);
 		plt_renderer_present(renderer);
 	}
