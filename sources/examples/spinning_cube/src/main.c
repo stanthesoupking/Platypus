@@ -16,14 +16,15 @@ int main(int argc, char **argv) {
 	float r = 0.0f;
 
 	while (!plt_application_should_close(app)) {
-		r += 0.01f;
+		r += 0.03f;
 		
 		plt_application_update(app);
 		
 		// Render
+		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0.25f,0});
 		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){0,0,r});
 		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.5f, 0.5f, 1.0f});
-		Plt_Matrix4x4f model = plt_matrix_multiply(rotate, scale);
+		Plt_Matrix4x4f model = plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
 		
 		plt_renderer_clear(renderer, plt_color8_make(0,0,0,255));
 		plt_renderer_set_model_matrix(renderer, model);

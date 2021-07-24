@@ -36,6 +36,15 @@ Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f left, Plt_Matrix4x4f right) {
 	return result;
 }
 
+Plt_Matrix4x4f plt_matrix_translate_make(Plt_Vector3f translate) {
+	return (Plt_Matrix4x4f) {{
+		{ 1, 0, 0, 0 },
+		{ 0, 1, 0, 0 },
+		{ 0, 0, 1, 0 },
+		{ translate.x, translate.y, translate.z, 1 }
+	}};
+}
+
 Plt_Matrix4x4f plt_matrix_scale_make(Plt_Vector3f scale) {
 	return (Plt_Matrix4x4f) {{
 		{ scale.x, 0, 0, 0 },
