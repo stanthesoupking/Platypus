@@ -79,6 +79,19 @@ Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate) {
 	return plt_matrix_multiply(plt_matrix_multiply(rz, ry), rx);
 }
 
+Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z) {
+	float ys = 1 / tanf(fov * 0.5);
+	float xs = ys / aspect_ratio;
+	float zs = far_z / (near_z - far_z);
+
+	return (Plt_Matrix4x4f) {{
+		{xs, 0, 0, 0},
+		{0, ys, 0, 0},
+		{0, 0, zs, near_z * zs},
+		{0, 0, -1, 0}
+	}};
+}
+
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
 	float32x4_t va = {v.x, v.y, v.z, v.w};
 	
@@ -90,4 +103,12 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
 	result = vmlaq_f32(result, vld1q_f32(m.columns[3]), (float32x4_t){v.w,v.w,v.w,v.w});
 
 	return (Plt_Vector4f){result[0], result[1], result[2], result[3]};
+}
+
+float plt_math_rad2deg(float rad) {
+	return rad / (PLT_PI / 180.0f);
+}
+
+float plt_math_deg2rad(float deg) {
+	return deg * (PLT_PI / 180.0f);
 }

@@ -5,6 +5,8 @@
 
 // MARK: Math
 
+#define PLT_PI 3.1415926535897932384626
+
 typedef struct Plt_Vector2i {
 	int x, y;
 } Plt_Vector2i;
@@ -42,7 +44,12 @@ Plt_Matrix4x4f plt_matrix_translate_make(Plt_Vector3f translate);
 Plt_Matrix4x4f plt_matrix_scale_make(Plt_Vector3f scale);
 Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate);
 
+Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z);
+
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
+
+float plt_math_rad2deg(float rad);
+float plt_math_deg2rad(float deg);
 
 // MARK: Color
 
@@ -63,6 +70,8 @@ void plt_renderer_present(Plt_Renderer *renderer);
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
+
+Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer);
 
 // MARK: Application
 

@@ -61,7 +61,13 @@ void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		};
 		
 		pos = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos);
-		Plt_Vector2f clip_xy = {pos.x, pos.y};
+
+		// Discard behind the camera
+		if (pos.z < 0) {
+			return;
+		}
+
+		Plt_Vector2f clip_xy = {pos.x / pos.w, pos.y / pos.w};
 		plt_renderer_draw_point(renderer, clip_xy, plt_color8_make(255, 0, 0, 255), 10);
 	}
 }
@@ -115,4 +121,8 @@ void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix)
 void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {
 	renderer->projection_matrix = matrix;
 	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix));
+}
+
+Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {
+	return (Plt_Vector2i) { renderer->framebuffer->width, renderer->framebuffer->height };
 }
