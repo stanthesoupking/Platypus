@@ -53,14 +53,16 @@ void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	Plt_Framebuffer framebuffer = *renderer->framebuffer;
 
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 1) {
-		Plt_Vector3f pos = {
+		Plt_Vector4f pos = {
 			mesh->position_x[i],
 			mesh->position_y[i],
 			mesh->position_z[i],
+			1.0f
 		};
 		
-		Plt_Vector2f projected = {pos.x, pos.y};
-		plt_renderer_draw_point(renderer, projected, plt_color8_make(255, 0, 0, 255), 10);
+		pos = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos);
+		Plt_Vector2f clip_xy = {pos.x, pos.y};
+		plt_renderer_draw_point(renderer, clip_xy, plt_color8_make(255, 0, 0, 255), 10);
 	}
 }
 

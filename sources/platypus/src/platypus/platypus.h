@@ -30,15 +30,19 @@ typedef struct Plt_Vector4f {
 } Plt_Vector4f;
 
 typedef struct Plt_Matrix4x4f {
-	float rows[4][4];
+	float columns[4][4];
 } Plt_Matrix4x4f;
 
-Plt_Matrix4x4f plt_matrix_identity();
-
-// Values defined in column-major format
+// Values defined in row-major format
 Plt_Matrix4x4f plt_matrix_create(float v[4][4]);
-
+Plt_Matrix4x4f plt_matrix_identity();
 Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f a, Plt_Matrix4x4f b);
+
+Plt_Matrix4x4f plt_matrix_translate_make(Plt_Vector3f translate);
+Plt_Matrix4x4f plt_matrix_scale_make(Plt_Vector3f scale);
+Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate);
+
+Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 // MARK: Color
 

@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
 		
 		// Render
 		plt_renderer_clear(renderer, plt_color8_make(0,0,0,255));
+		plt_renderer_set_model_matrix(renderer, plt_matrix_scale_make((Plt_Vector3f){0.5f, 0.5f, 1.0f}));
 		plt_renderer_draw_mesh(renderer, triangle);
 		plt_renderer_present(renderer);
 	}
