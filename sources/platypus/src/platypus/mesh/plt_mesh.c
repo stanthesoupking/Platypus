@@ -50,41 +50,41 @@ void plt_mesh_destroy(Plt_Mesh **mesh) {
 	*mesh = NULL;
 }
 
-void plt_mesh_set_position(Plt_Mesh *mesh, int index, Plt_Vector3 position) {
+void plt_mesh_set_position(Plt_Mesh *mesh, int index, Plt_Vector3f position) {
 	mesh->position_x[index] = position.x;
 	mesh->position_y[index] = position.y;
 	mesh->position_z[index] = position.z;
 }
 
-Plt_Vector3 plt_mesh_get_position(Plt_Mesh *mesh, int index) {
-	return (Plt_Vector3) {
+Plt_Vector3f plt_mesh_get_position(Plt_Mesh *mesh, int index) {
+	return (Plt_Vector3f) {
 		.x = mesh->position_x[index],
 		.y = mesh->position_y[index],
 		.z = mesh->position_z[index]
 	};
 }
 
-void plt_mesh_set_normal(Plt_Mesh *mesh, int index, Plt_Vector3 normal) {
+void plt_mesh_set_normal(Plt_Mesh *mesh, int index, Plt_Vector3f normal) {
 	mesh->normal_x[index] = normal.x;
 	mesh->normal_y[index] = normal.y;
 	mesh->normal_z[index] = normal.z;
 }
 
-Plt_Vector3 plt_mesh_get_normal(Plt_Mesh *mesh, int index) {
-	return (Plt_Vector3) {
+Plt_Vector3f plt_mesh_get_normal(Plt_Mesh *mesh, int index) {
+	return (Plt_Vector3f) {
 		.x = mesh->normal_x[index],
 		.y = mesh->normal_y[index],
 		.z = mesh->normal_z[index]
 	};
 }
 
-void plt_mesh_set_uv(Plt_Mesh *mesh, int index, Plt_Vector2 uv) {
+void plt_mesh_set_uv(Plt_Mesh *mesh, int index, Plt_Vector2f uv) {
 	mesh->uv_x[index] = uv.x;
 	mesh->uv_y[index] = uv.y;
 }
 
-Plt_Vector2 plt_mesh_get_uv(Plt_Mesh *mesh, int index) {
-	return (Plt_Vector2) {
+Plt_Vector2f plt_mesh_get_uv(Plt_Mesh *mesh, int index) {
+	return (Plt_Vector2f) {
 		.x = mesh->uv_x[index],
 		.y = mesh->uv_y[index],
 	};
