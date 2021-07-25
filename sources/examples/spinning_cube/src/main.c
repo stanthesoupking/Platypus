@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 		
 		// Render
 		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0,-r - 10.0f});
-		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){0,0,0});
+		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){0,0,r});
 		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.5f, 0.5f, 1.0f});
 		Plt_Matrix4x4f model = plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
 
@@ -30,6 +30,9 @@ int main(int argc, char **argv) {
 		float aspect_ratio = size.x / (float)size.y;
 		Plt_Matrix4x4f projection = plt_matrix_perspective_make(aspect_ratio, plt_math_deg2rad(60.0f), 0.1f, 100.0f);
 		plt_renderer_set_projection_matrix(renderer, projection);
+
+		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Line);
+		plt_renderer_set_point_size(renderer, 8);
 		
 		plt_renderer_clear(renderer, plt_color8_make(0,0,0,255));
 		plt_renderer_set_model_matrix(renderer, model);

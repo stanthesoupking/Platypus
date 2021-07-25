@@ -61,11 +61,20 @@ Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned char b, un
 
 // MARK: Renderer
 
+typedef enum Plt_Primitive_Type {
+	Plt_Primitive_Type_Point,
+	Plt_Primitive_Type_Line,
+	Plt_Primitive_Type_Triangle
+} Plt_Primitive_Type;
+
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Mesh Plt_Mesh;
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color);
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh);
 void plt_renderer_present(Plt_Renderer *renderer);
+
+void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type);
+void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
