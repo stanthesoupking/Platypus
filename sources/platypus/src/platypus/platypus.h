@@ -48,6 +48,8 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
+float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
+
 float plt_math_rad2deg(float rad);
 float plt_math_deg2rad(float deg);
 

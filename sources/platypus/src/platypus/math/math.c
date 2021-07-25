@@ -105,6 +105,10 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
 	return (Plt_Vector4f){result[0], result[1], result[2], result[3]};
 }
 
+float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
+	return a.x * b.y + a.y * b.x;
+}
+
 float plt_math_rad2deg(float rad) {
 	return rad / (PLT_PI / 180.0f);
 }

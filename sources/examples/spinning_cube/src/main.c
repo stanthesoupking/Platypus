@@ -31,11 +31,14 @@ int main(int argc, char **argv) {
 		Plt_Matrix4x4f projection = plt_matrix_perspective_make(aspect_ratio, plt_math_deg2rad(60.0f), 0.1f, 100.0f);
 		plt_renderer_set_projection_matrix(renderer, projection);
 
-		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Line);
+		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
 		plt_renderer_set_point_size(renderer, 8);
 		
 		plt_renderer_clear(renderer, plt_color8_make(0,0,0,255));
 		plt_renderer_set_model_matrix(renderer, model);
+		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
+		plt_renderer_draw_mesh(renderer, triangle);
+		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Point);
 		plt_renderer_draw_mesh(renderer, triangle);
 		plt_renderer_present(renderer);
 	}

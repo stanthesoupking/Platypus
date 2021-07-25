@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include "platypus/application/plt_application.h"
+#include "platypus/base/macros.h"
 
 typedef struct Plt_Renderer {
 	Plt_Application *application;
@@ -19,6 +20,10 @@ typedef struct Plt_Renderer {
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p);
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color);
 void plt_renderer_poke_pixel(Plt_Renderer *renderer, Plt_Vector2i p, Plt_Color8 color);
+
+void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh);
+void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh);
+void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh);
 
 Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer *framebuffer) {
 	Plt_Renderer *renderer = malloc(sizeof(Plt_Renderer));
@@ -55,9 +60,7 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	#endif
 }
 
-void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	Plt_Framebuffer framebuffer = *renderer->framebuffer;
-
+void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 1) {
 		Plt_Vector4f pos = {
 			mesh->position_x[i],
@@ -75,6 +78,81 @@ void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 		Plt_Vector2f clip_xy = {pos.x / pos.w, pos.y / pos.w};
 		plt_renderer_draw_point(renderer, clip_xy, plt_color8_make(255, 0, 0, 255));
+	}
+}
+
+void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+	// TODO: Implement line rendering
+}
+
+float plt_renderer_perpendicular_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
+	return a.x * b.y - a.y * b.x;
+};
+
+float plt_renderer_orient2d(Plt_Vector2f a, Plt_Vector2f b, Plt_Vector2f c)
+{
+    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
+		Plt_Vector4f pos[3];
+		Plt_Vector2i spos[3];
+
+		for (unsigned int j = 0; j < 3; ++j) {
+			pos[j] = (Plt_Vector4f) {
+				mesh->position_x[i + j],
+				mesh->position_y[i + j],
+				mesh->position_z[i + j],
+				1.0f
+			};
+
+			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
+			pos[j].x = pos[j].x / pos[j].w;
+			pos[j].y = pos[j].y / pos[j].w;
+			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){pos[j].x, pos[j].y});
+		}
+
+		Plt_Vector2i bounds_min = spos[0];
+		Plt_Vector2i bounds_max = spos[0];
+		for (unsigned int j = 1; j < 3; ++j) {
+			bounds_min.x = plt_min(spos[j].x, bounds_min.x);
+			bounds_min.y = plt_min(spos[j].y, bounds_min.y);
+			bounds_max.x = plt_max(spos[j].x, bounds_max.x);
+			bounds_max.y = plt_max(spos[j].y, bounds_max.y);
+		}
+
+		// Half-space triangle rasterization
+		for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
+			for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
+				Plt_Vector2f p = { x, y };
+				float c1 = plt_renderer_orient2d((Plt_Vector2f){spos[1].x,spos[1].y}, (Plt_Vector2f){spos[2].x,spos[2].y}, p);
+				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
+				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
+
+				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0) || (c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
+					plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, plt_color8_make(255,0,0,255));
+				}
+			}
+		}
+	}
+}
+
+void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+	Plt_Framebuffer framebuffer = *renderer->framebuffer;
+
+	switch (renderer->primitive_type) {
+		case Plt_Primitive_Type_Point:
+			plt_renderer_draw_mesh_points(renderer, mesh);
+			break;
+
+		case Plt_Primitive_Type_Line:
+			plt_renderer_draw_mesh_lines(renderer, mesh);
+			break;
+
+		case Plt_Primitive_Type_Triangle:
+			plt_renderer_draw_mesh_triangles(renderer, mesh);
+			break;
 	}
 }
 
