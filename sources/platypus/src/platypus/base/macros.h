@@ -6,6 +6,7 @@
 
 #define plt_min(X, Y) (((X) < (Y)) ? (X) : (Y))
 #define plt_max(X, Y) (((X) > (Y)) ? (X) : (Y))
+#define plt_clamp(V, MIN, MAX) (plt_min(plt_max(V, MIN), MAX))
 
 #define plt_cast(type, var) *((type*)&var)
 

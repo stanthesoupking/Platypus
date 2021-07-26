@@ -50,6 +50,9 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
 
+Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
+Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b);
+
 float plt_math_rad2deg(float rad);
 float plt_math_deg2rad(float deg);
 
@@ -113,5 +116,23 @@ Plt_Vector3f plt_mesh_get_normal(Plt_Mesh *mesh, int index);
 
 void plt_mesh_set_uv(Plt_Mesh *mesh, int index, Plt_Vector2f uv);
 Plt_Vector2f plt_mesh_get_uv(Plt_Mesh *mesh, int index);
+
+// MARK: Texture
+
+typedef enum Plt_Texture_Format {
+	Plt_Texture_Format_Byte,
+	Plt_Texture_Format_Float
+} Plt_Texture_Format;
+
+typedef struct Plt_Texture Plt_Texture;
+Plt_Texture *plt_texture_create(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format);
+void plt_texture_destroy(Plt_Texture **texture);
+
+Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
+void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f value);
+
+void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value);
+
+Plt_Vector2i plt_texture_get_size(Plt_Texture *texture);
 
 #endif

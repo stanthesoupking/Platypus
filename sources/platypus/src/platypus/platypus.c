@@ -4,3 +4,4 @@
 #include "math/math.c"
 #include "mesh/plt_mesh.c"
 #include "renderer/plt_renderer.c"
+#include "texture/plt_texture.c"

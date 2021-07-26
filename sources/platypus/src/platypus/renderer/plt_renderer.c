@@ -7,6 +7,7 @@
 typedef struct Plt_Renderer {
 	Plt_Application *application;
 	Plt_Framebuffer *framebuffer;
+	Plt_Texture *depth_texture;
 
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
@@ -38,11 +39,17 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 
 	renderer->point_size = 1;
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
+	
+	renderer->depth_texture = NULL;
 
 	return renderer;
 }
 
 void plt_renderer_destroy(Plt_Renderer **renderer) {
+	if ((*renderer)->depth_texture) {
+		plt_texture_destroy(&(*renderer)->depth_texture);
+	}
+
 	free(*renderer);
 	*renderer = NULL;
 }
@@ -58,6 +65,9 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 			framebuffer.pixels[i] = clear_color;
 		}
 	#endif
+	
+	float clear_depth = INFINITY;
+	plt_texture_clear(renderer->depth_texture, (Plt_Vector4f){clear_depth});
 }
 
 void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
@@ -97,6 +107,7 @@ float plt_renderer_orient2d(Plt_Vector2f a, Plt_Vector2f b, Plt_Vector2f c)
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
 		Plt_Vector4f pos[3];
+		Plt_Vector4f wpos[3];
 		Plt_Vector2i spos[3];
 
 		for (unsigned int j = 0; j < 3; ++j) {
@@ -108,9 +119,8 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			};
 
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
-			pos[j].x = pos[j].x / pos[j].w;
-			pos[j].y = pos[j].y / pos[j].w;
-			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){pos[j].x, pos[j].y});
+			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
+			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){wpos[j].x, wpos[j].y});
 		}
 
 		Plt_Vector2i bounds_min = spos[0];
@@ -129,9 +139,30 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				float c1 = plt_renderer_orient2d((Plt_Vector2f){spos[1].x,spos[1].y}, (Plt_Vector2f){spos[2].x,spos[2].y}, p);
 				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
 				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
+				
+				float sum = c1 + c2 + c3;
+				Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
+
+				Plt_Vector4f world_pos = {};
+				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
+				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
+				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
+
+				world_pos.x /= world_pos.w;
+				world_pos.y /= world_pos.w;
+				
+				Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
+				
+				float depth = world_pos.z;
 
 				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) || ((c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
-					plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, plt_color8_make(c1 * 0.1,c2 * 0.1,c3 * 0.1,255));
+					float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
+					if (depth_sample < depth) {
+						continue;
+					}
+					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
+
+					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(weights.x * 255, weights.y * 255, weights.z * 255, 255));
 				}
 			}
 		}
@@ -220,4 +251,15 @@ void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f m
 
 Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {
 	return (Plt_Vector2i) { renderer->framebuffer->width, renderer->framebuffer->height };
+}
+
+void plt_renderer_set_depth_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
+	if (renderer->depth_texture) {
+		plt_texture_destroy(&renderer->depth_texture);
+	}
+	renderer->depth_texture = texture;
+}
+
+Plt_Texture *plt_renderer_get_depth_texture(Plt_Renderer *renderer) {
+	return renderer->depth_texture;
 }

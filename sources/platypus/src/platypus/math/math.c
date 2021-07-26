@@ -109,6 +109,14 @@ float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y + a.y * b.x;
 }
 
+Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b) {
+	return (Plt_Vector4f){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
+}
+
+Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b) {
+	return (Plt_Vector4f){ a.x * b, a.y * b, a.z * b, a.w * b };
+}
+
 float plt_math_rad2deg(float rad) {
 	return rad / (PLT_PI / 180.0f);
 }
