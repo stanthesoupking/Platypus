@@ -10,23 +10,27 @@
 typedef struct Plt_Application {
 	SDL_Window *window;
 
+	SDL_Surface *framebuffer_surface;
 	Plt_Framebuffer framebuffer;
+
 	Plt_Renderer *renderer;
 
 	bool should_quit;
 	unsigned int target_frame_ms;
 
+	unsigned int scale;
 	Plt_Color8 clear_color;
 } Plt_Application;
 
 void plt_application_render(Plt_Application *application);
 void plt_application_update_framebuffer(Plt_Application *application);
 
-Plt_Application *plt_application_create(const char *title, unsigned int width, unsigned int height, Plt_Application_Option options) {
+Plt_Application *plt_application_create(const char *title, unsigned int width, unsigned int height, unsigned int scale, Plt_Application_Option options) {
 	Plt_Application *application = malloc(sizeof(Plt_Application));
 
 	application->target_frame_ms = 16; // 60 FPS
 	application->clear_color = plt_color8_make(80,80,80,255);
+	application->scale = scale;
 
 	if (SDL_Init(0)) {
 		plt_abort("Failed initialising SDL.\n");
@@ -37,6 +41,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	application->should_quit = false;
 	application->renderer = plt_renderer_create(application, &application->framebuffer);
 
+	application->framebuffer_surface = NULL;
 	plt_application_update_framebuffer(application);
 
 	return application;
@@ -72,13 +77,32 @@ void plt_application_update(Plt_Application *application) {
 }
 
 void plt_application_update_framebuffer(Plt_Application *application) {
-	SDL_Surface *surface = SDL_GetWindowSurface(application->window);
+	SDL_Surface *window_surface = SDL_GetWindowSurface(application->window);
 
-	application->framebuffer = (Plt_Framebuffer) {
-		.pixels = surface->pixels,
-		.width = surface->w,
-		.height = surface->h
-	};
+	if (application->scale == 1) {
+		application->framebuffer = (Plt_Framebuffer) {
+			.pixels = window_surface->pixels,
+			.width = window_surface->w,
+			.height = window_surface->h
+		};
+	} else {
+		Plt_Vector2i scaled_size = {window_surface->w / application->scale, window_surface->h / application->scale};
+		
+		if (application->framebuffer_surface && ((application->framebuffer_surface->w != scaled_size.x) || (application->framebuffer_surface->h != scaled_size.y))) {
+			SDL_FreeSurface(application->framebuffer_surface);
+			application->framebuffer_surface = NULL;
+		}
+
+		if (!application->framebuffer_surface) {
+			application->framebuffer_surface = SDL_CreateRGBSurface(0, scaled_size.x, scaled_size.y, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+		}
+
+		application->framebuffer = (Plt_Framebuffer) {
+			.pixels = application->framebuffer_surface->pixels,
+			.width = scaled_size.x,
+			.height = scaled_size.y
+		};
+	}
 }
 
 SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {
@@ -87,4 +111,12 @@ SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 	return application->renderer;
+}
+
+void plt_application_present(Plt_Application *application) {
+	if (application->scale != 1) {
+		SDL_BlitScaled(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
+	}
+
+	SDL_UpdateWindowSurface(application->window);
 }

@@ -130,8 +130,8 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
 				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
 
-				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0) || (c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
-					plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, plt_color8_make(255,0,0,255));
+				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) || ((c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
+					plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, plt_color8_make(c1 * 0.1,c2 * 0.1,c3 * 0.1,255));
 				}
 			}
 		}
@@ -192,8 +192,7 @@ Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2
 }
 
 void plt_renderer_present(Plt_Renderer *renderer) {
-	SDL_Window *window = plt_application_get_sdl_window(renderer->application);
-	SDL_UpdateWindowSurface(window);
+	plt_application_present(renderer->application);
 }
 
 void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type) {

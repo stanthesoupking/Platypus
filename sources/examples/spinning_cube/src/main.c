@@ -5,7 +5,7 @@
 int main(int argc, char **argv) {
 	printf("Hello\n");
 
-	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, Plt_Application_Option_None);
+	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, 4, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
 	Plt_Mesh *triangle = plt_mesh_create(3);
@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
 		plt_renderer_set_model_matrix(renderer, model);
 		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
 		plt_renderer_draw_mesh(renderer, triangle);
-		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Point);
-		plt_renderer_draw_mesh(renderer, triangle);
+		// plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Point);
+		// plt_renderer_draw_mesh(renderer, triangle);
 		plt_renderer_present(renderer);
 	}
 
