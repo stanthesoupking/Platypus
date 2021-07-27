@@ -187,7 +187,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
 
-					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(tex_color.x * 255, tex_color.y * 255, tex_color.z * 255, 255));
+					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(tex_color.z * 255, tex_color.y * 255, tex_color.x * 255, 255));
 				}
 			}
 		}

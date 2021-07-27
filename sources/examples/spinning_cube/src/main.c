@@ -5,7 +5,7 @@
 int main(int argc, char **argv) {
 	printf("Hello\n");
 
-	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, 4, Plt_Application_Option_None);
+	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, 1, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
 	Plt_Mesh *cube = plt_mesh_create_cube((Plt_Vector3f){1,1,1});

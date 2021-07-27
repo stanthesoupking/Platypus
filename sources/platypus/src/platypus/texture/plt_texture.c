@@ -70,7 +70,7 @@ Plt_Texture *plt_texture_load(const char *path) {
 	unsigned int total_pixels = width * height;
 	for (unsigned int i = 0; i < total_pixels; ++i) {
 		Plt_Color8 p = pixels[i];
-		pixels[i] = (Plt_Color8){p.b, p.g, p.r, p.a};
+		pixels[i] = (Plt_Color8){p.r, p.g, p.b, p.a};
 	}
 	
 	if (!pixels) {
