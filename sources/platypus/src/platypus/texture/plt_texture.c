@@ -234,7 +234,7 @@ void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value) {
 
 	// Fast path using memset
 	if (pixel_length == 1) {
-		memset(texture->data, pixel_data, texture->width * texture->height);
+		memset(texture->data, pixel_data[0], texture->width * texture->height);
 		return;
 	}
 

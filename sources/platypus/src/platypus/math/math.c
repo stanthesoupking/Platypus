@@ -113,6 +113,10 @@ Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b) {
 	return (Plt_Vector4f){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 }
 
+Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b) {
+	return (Plt_Vector3f){ a.x * b, a.y * b, a.z * b };
+}
+
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b) {
 	return (Plt_Vector4f){ a.x * b, a.y * b, a.z * b, a.w * b };
 }

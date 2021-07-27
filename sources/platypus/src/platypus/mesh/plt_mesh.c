@@ -50,6 +50,62 @@ void plt_mesh_destroy(Plt_Mesh **mesh) {
 	*mesh = NULL;
 }
 
+Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
+	Plt_Mesh *cube = plt_mesh_create(36);
+
+	Plt_Vector3f hsize = plt_vector3f_multiply_scalar(size, 0.5f);
+	
+	// front
+	plt_mesh_set_position(cube, 0, (Plt_Vector3f){-hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 1, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 2, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 3, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 4, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 5, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+	
+	// back
+	plt_mesh_set_position(cube, 6, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 7, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 8, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 9, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 10, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 11, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+	
+	// top
+	plt_mesh_set_position(cube, 12, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 13, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 14, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 15, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 16, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 17, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+	
+	// bottom
+	plt_mesh_set_position(cube, 18, (Plt_Vector3f){-hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 19, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 20, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 21, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 22, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 23, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+	
+	// left
+	plt_mesh_set_position(cube, 24, (Plt_Vector3f){-hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 25, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 26, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 27, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 28, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 29, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+	
+	// right
+	plt_mesh_set_position(cube, 30, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 31, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 32, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 33, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
+	plt_mesh_set_position(cube, 34, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
+	plt_mesh_set_position(cube, 35, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+
+	return cube;
+}
+
 void plt_mesh_set_position(Plt_Mesh *mesh, int index, Plt_Vector3f position) {
 	mesh->position_x[index] = position.x;
 	mesh->position_y[index] = position.y;

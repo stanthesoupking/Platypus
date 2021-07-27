@@ -108,6 +108,8 @@ typedef struct Plt_Mesh Plt_Mesh;
 Plt_Mesh *plt_mesh_create(int vertex_count);
 void plt_mesh_destroy(Plt_Mesh **mesh);
 
+Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size);
+
 void plt_mesh_set_position(Plt_Mesh *mesh, int index, Plt_Vector3f position);
 Plt_Vector3f plt_mesh_get_position(Plt_Mesh *mesh, int index);
 

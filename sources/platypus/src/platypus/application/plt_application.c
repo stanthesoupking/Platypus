@@ -123,7 +123,7 @@ Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 
 void plt_application_present(Plt_Application *application) {
 	if (application->scale != 1) {
-		SDL_BlitScaled(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
+		SDL_SoftStretch(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
 	}
 
 	SDL_UpdateWindowSurface(application->window);

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "platypus/application/plt_application.h"
 #include "platypus/base/macros.h"
+#include "platypus/base/neon.h"
 
 typedef struct Plt_Renderer {
 	Plt_Application *application;
@@ -132,6 +133,11 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			bounds_max.y = plt_max(spos[j].y, bounds_max.y);
 		}
 
+		bounds_min.x = plt_max(bounds_min.x, 0);
+		bounds_min.y = plt_max(bounds_min.y, 0);
+		bounds_max.x = plt_max(bounds_max.x, renderer->framebuffer->width);
+		bounds_max.y = plt_max(bounds_max.y, renderer->framebuffer->height);
+
 		// Half-space triangle rasterization
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
 			for (int x = bounds_min.x; x < bounds_max.x; ++x) {
@@ -139,23 +145,27 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				float c1 = plt_renderer_orient2d((Plt_Vector2f){spos[1].x,spos[1].y}, (Plt_Vector2f){spos[2].x,spos[2].y}, p);
 				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
 				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
-				
-				float sum = c1 + c2 + c3;
-				Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
-
-				Plt_Vector4f world_pos = {};
-				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
-				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
-				world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
-
-				world_pos.x /= world_pos.w;
-				world_pos.y /= world_pos.w;
-				
-				Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
-				
-				float depth = world_pos.z;
 
 				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) || ((c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
+					float sum = c1 + c2 + c3;
+					Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
+
+					Plt_Vector4f world_pos = {};
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
+
+					world_pos.x /= world_pos.w;
+					world_pos.y /= world_pos.w;
+					
+					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
+					
+					float depth = world_pos.z;
+
+					if (depth < 0) {
+						continue;
+					}
+
 					float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
 					if (depth_sample < depth) {
 						continue;
