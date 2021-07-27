@@ -78,12 +78,14 @@ typedef enum Plt_Primitive_Type {
 
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Mesh Plt_Mesh;
+typedef struct Plt_Texture Plt_Texture;
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color);
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh);
 void plt_renderer_present(Plt_Renderer *renderer);
 
 void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type);
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
+void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture);
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
@@ -139,6 +141,8 @@ Plt_Texture *plt_texture_load(const char *path);
 
 Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
 void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f value);
+
+Plt_Vector4f plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
 
 void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value);
 

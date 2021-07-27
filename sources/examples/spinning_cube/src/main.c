@@ -11,6 +11,8 @@ int main(int argc, char **argv) {
 	Plt_Mesh *cube = plt_mesh_create_cube((Plt_Vector3f){1,1,1});
 	Plt_Texture *crate_texture = plt_texture_load("assets/crate.png");
 	
+	plt_renderer_bind_texture(renderer, crate_texture);
+	
 	float r = 0.0f;
 
 	while (!plt_application_should_close(app)) {

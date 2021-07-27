@@ -64,8 +64,14 @@ Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned i
 
 Plt_Texture *plt_texture_load(const char *path) {
 	int width, height, channels;
-	unsigned char *pixels = stbi_load(path, &width, &height, &channels, 4);
+	Plt_Color8 *pixels = (Plt_Color8 *)stbi_load(path, &width, &height, &channels, 4);
 	plt_assert(pixels, "Failed loading texture from path.\n");
+	
+	unsigned int total_pixels = width * height;
+	for (unsigned int i = 0; i < total_pixels; ++i) {
+		Plt_Color8 p = pixels[i];
+		pixels[i] = (Plt_Color8){p.b, p.g, p.r, p.a};
+	}
 	
 	if (!pixels) {
 		return NULL;
@@ -86,25 +92,25 @@ Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
 		case Plt_Texture_Format_Byte: {
 			switch (texture->channels) {
 				case 1:
-					output.x = ((char *)pixel_data)[0];
+					output.x = ((char *)pixel_data)[0] / 255.0f;
 					break;
 
 				case 2:
-					output.x = ((char *)pixel_data)[0];
-					output.y = ((char *)pixel_data)[1];
+					output.x = ((char *)pixel_data)[0] / 255.0f;
+					output.y = ((char *)pixel_data)[1] / 255.0f;
 					break;
 
 				case 3:
-					output.x = ((char *)pixel_data)[0];
-					output.y = ((char *)pixel_data)[1];
-					output.z = ((char *)pixel_data)[2];
+					output.x = ((char *)pixel_data)[0] / 255.0f;
+					output.y = ((char *)pixel_data)[1] / 255.0f;
+					output.z = ((char *)pixel_data)[2] / 255.0f;
 					break;
 
 				case 4:
-					output.x = ((char *)pixel_data)[0];
-					output.y = ((char *)pixel_data)[1];
-					output.z = ((char *)pixel_data)[2];
-					output.w = ((char *)pixel_data)[3];
+					output.x = ((char *)pixel_data)[0] / 255.0f;
+					output.y = ((char *)pixel_data)[1] / 255.0f;
+					output.z = ((char *)pixel_data)[2] / 255.0f;
+					output.w = ((char *)pixel_data)[3] / 255.0f;
 					break;
 			}
 		} break;
@@ -200,6 +206,11 @@ void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f 
 			}
 		} break;
 	}
+}
+
+Plt_Vector4f plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos) {
+	Plt_Vector2i pixel_pos = { pos.x * texture->width, pos.y * texture->height };
+	return plt_texture_get_pixel(texture, pixel_pos);
 }
 
 void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value) {

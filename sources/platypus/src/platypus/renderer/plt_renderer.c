@@ -13,6 +13,8 @@ typedef struct Plt_Renderer {
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
 
+	Plt_Texture *bound_texture;
+
 	Plt_Matrix4x4f model_matrix;
 	Plt_Matrix4x4f view_matrix;
 	Plt_Matrix4x4f projection_matrix;
@@ -40,6 +42,8 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 
 	renderer->point_size = 1;
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
+
+	renderer->bound_texture = NULL;
 	
 	renderer->depth_texture = NULL;
 
@@ -138,8 +142,8 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 		bounds_min.x = plt_max(bounds_min.x, 0);
 		bounds_min.y = plt_max(bounds_min.y, 0);
-		bounds_max.x = plt_max(bounds_max.x, renderer->framebuffer->width);
-		bounds_max.y = plt_max(bounds_max.y, renderer->framebuffer->height);
+		bounds_max.x = plt_min(bounds_max.x, renderer->framebuffer->width);
+		bounds_max.y = plt_min(bounds_max.y, renderer->framebuffer->height);
 
 		// Half-space triangle rasterization
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
@@ -178,10 +182,12 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
 					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
 					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
+
+					Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
 					
 					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
 
-					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(uv.x * 255, uv.y * 255, 0.0f, 255));
+					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(tex_color.x * 255, tex_color.y * 255, tex_color.z * 255, 255));
 				}
 			}
 		}
@@ -251,6 +257,10 @@ void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type 
 
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size) {
 	renderer->point_size = size;
+}
+
+void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
+	renderer->bound_texture = texture;
 }
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {
