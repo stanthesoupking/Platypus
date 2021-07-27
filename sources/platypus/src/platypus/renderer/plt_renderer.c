@@ -133,8 +133,8 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		}
 
 		// Half-space triangle rasterization
-		for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
-			for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
+		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
+			for (int x = bounds_min.x; x < bounds_max.x; ++x) {
 				Plt_Vector2f p = { x, y };
 				float c1 = plt_renderer_orient2d((Plt_Vector2f){spos[1].x,spos[1].y}, (Plt_Vector2f){spos[2].x,spos[2].y}, p);
 				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
