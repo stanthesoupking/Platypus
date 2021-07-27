@@ -64,17 +64,18 @@ Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned i
 
 Plt_Texture *plt_texture_load(const char *path) {
 	int width, height, channels;
+
 	Plt_Color8 *pixels = (Plt_Color8 *)stbi_load(path, &width, &height, &channels, 4);
 	plt_assert(pixels, "Failed loading texture from path.\n");
+
+	if (!pixels) {
+		return NULL;
+	}
 	
 	unsigned int total_pixels = width * height;
 	for (unsigned int i = 0; i < total_pixels; ++i) {
 		Plt_Color8 p = pixels[i];
 		pixels[i] = (Plt_Color8){p.r, p.g, p.b, p.a};
-	}
-	
-	if (!pixels) {
-		return NULL;
 	}
 
 	return plt_texture_create_with_bytes_nocopy(width, height, channels, Plt_Texture_Format_Byte, pixels);
@@ -85,32 +86,32 @@ Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
 	pos.y = plt_clamp(pos.y, 0, texture->height);
 
 	unsigned int pixel_length = plt_texture_format_get_length(texture->format) * texture->channels;
-	void *pixel_data = texture->data + texture->row_length * pos.y + pos.x * pixel_length;
+	void *pixel_data = texture->data + (texture->row_length * pos.y) + (pos.x * pixel_length);
 
 	Plt_Vector4f output = {};
 	switch (texture->format) {
 		case Plt_Texture_Format_Byte: {
 			switch (texture->channels) {
 				case 1:
-					output.x = ((char *)pixel_data)[0] / 255.0f;
+					output.x = ((unsigned char *)pixel_data)[0] / 255.0f;
 					break;
 
 				case 2:
-					output.x = ((char *)pixel_data)[0] / 255.0f;
-					output.y = ((char *)pixel_data)[1] / 255.0f;
+					output.x = ((unsigned char *)pixel_data)[0] / 255.0f;
+					output.y = ((unsigned char *)pixel_data)[1] / 255.0f;
 					break;
 
 				case 3:
-					output.x = ((char *)pixel_data)[0] / 255.0f;
-					output.y = ((char *)pixel_data)[1] / 255.0f;
-					output.z = ((char *)pixel_data)[2] / 255.0f;
+					output.x = ((unsigned char *)pixel_data)[0] / 255.0f;
+					output.y = ((unsigned char *)pixel_data)[1] / 255.0f;
+					output.z = ((unsigned char *)pixel_data)[2] / 255.0f;
 					break;
 
 				case 4:
-					output.x = ((char *)pixel_data)[0] / 255.0f;
-					output.y = ((char *)pixel_data)[1] / 255.0f;
-					output.z = ((char *)pixel_data)[2] / 255.0f;
-					output.w = ((char *)pixel_data)[3] / 255.0f;
+					output.x = ((unsigned char *)pixel_data)[0] / 255.0f;
+					output.y = ((unsigned char *)pixel_data)[1] / 255.0f;
+					output.z = ((unsigned char *)pixel_data)[2] / 255.0f;
+					output.w = ((unsigned char *)pixel_data)[3] / 255.0f;
 					break;
 			}
 		} break;
@@ -157,25 +158,25 @@ void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f 
 		case Plt_Texture_Format_Byte: {
 			switch (texture->channels) {
 				case 1:
-					((char *)pixel_data)[0] = value.x;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
 					break;
 
 				case 2:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
 					break;
 
 				case 3:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
-					((char *)pixel_data)[2] = value.z;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
+					((unsigned char *)pixel_data)[2] = value.z * 255;
 					break;
 
 				case 4:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
-					((char *)pixel_data)[2] = value.z;
-					((char *)pixel_data)[3] = value.w;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
+					((unsigned char *)pixel_data)[2] = value.z * 255;
+					((unsigned char *)pixel_data)[3] = value.w * 255;
 					break;
 			}
 		} break;
@@ -222,25 +223,25 @@ void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value) {
 		case Plt_Texture_Format_Byte: {
 			switch (texture->channels) {
 				case 1:
-					((char *)pixel_data)[0] = value.x;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
 					break;
 					
 				case 2:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
 					break;
 					
 				case 3:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
-					((char *)pixel_data)[2] = value.z;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
+					((unsigned char *)pixel_data)[2] = value.z * 255;
 					break;
 					
 				case 4:
-					((char *)pixel_data)[0] = value.x;
-					((char *)pixel_data)[1] = value.y;
-					((char *)pixel_data)[2] = value.z;
-					((char *)pixel_data)[3] = value.w;
+					((unsigned char *)pixel_data)[0] = value.x * 255;
+					((unsigned char *)pixel_data)[1] = value.y * 255;
+					((unsigned char *)pixel_data)[2] = value.z * 255;
+					((unsigned char *)pixel_data)[3] = value.w * 255;
 					break;
 			}
 		} break;

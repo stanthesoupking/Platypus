@@ -168,13 +168,9 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
 					
 					float depth = world_pos.z;
-
-					if (depth < 0) {
-						continue;
-					}
-
 					float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
-					if (depth_sample < depth) {
+
+					if ((depth < 0) || (depth_sample < depth)) {
 						continue;
 					}
 					
@@ -187,7 +183,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
 
-					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(tex_color.z * 255, tex_color.y * 255, tex_color.x * 255, 255));
+					plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){tex_color.x * 255.0f, tex_color.y * 255.0f, tex_color.z * 255.0f, 255});
 				}
 			}
 		}
