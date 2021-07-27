@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include "platypus/base/macros.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "platypus/vendor/stb_image.h"
+
 typedef struct Plt_Texture {
 	void *data;
 
@@ -43,6 +46,32 @@ void plt_texture_destroy(Plt_Texture **texture) {
 	free((*texture)->data);
 	free(*texture);
 	*texture = NULL;
+}
+
+Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format, void *bytes) {
+	Plt_Texture *texture = malloc(sizeof(Plt_Texture));
+
+	texture->width = width;
+	texture->height = height;
+	texture->channels = channels;
+	texture->format = format;
+
+	texture->row_length = width * channels * plt_texture_format_get_length(format);
+	texture->data = bytes;
+
+	return texture;
+}
+
+Plt_Texture *plt_texture_load(const char *path) {
+	int width, height, channels;
+	unsigned char *pixels = stbi_load(path, &width, &height, &channels, 4);
+	plt_assert(pixels, "Failed loading texture from path.\n");
+	
+	if (!pixels) {
+		return NULL;
+	}
+
+	return plt_texture_create_with_bytes_nocopy(width, height, channels, Plt_Texture_Format_Byte, pixels);
 }
 
 Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {

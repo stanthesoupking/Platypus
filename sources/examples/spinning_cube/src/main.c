@@ -8,7 +8,8 @@ int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Cube", 860, 640, 4, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	Plt_Mesh *cube = plt_mesh_create_cube((Plt_Vector3f){2,0.1,1});
+	Plt_Mesh *cube = plt_mesh_create_cube((Plt_Vector3f){1,1,1});
+	Plt_Texture *crate_texture = plt_texture_load("assets/crate.png");
 	
 	float r = 0.0f;
 
@@ -18,7 +19,7 @@ int main(int argc, char **argv) {
 		plt_application_update(app);
 		
 		// Render
-		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0.25f,-r * 5.0f - 3.0f});
+		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0.25f,-r * 5.0f - 10.0f});
 		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){r * 0.5,r,r * 0.25});
 		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){1, 1, 1});
 		Plt_Matrix4x4f model = plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
@@ -41,6 +42,7 @@ int main(int argc, char **argv) {
 	}
 
 	plt_mesh_destroy(&cube);
+	plt_texture_destroy(&crate_texture);
 	plt_application_destroy(&app);
 
 	return 0;

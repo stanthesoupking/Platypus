@@ -50,7 +50,11 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
 
+Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b);
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
+
+Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);
+Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b);
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b);
 
 float plt_math_rad2deg(float rad);
@@ -129,6 +133,9 @@ typedef enum Plt_Texture_Format {
 typedef struct Plt_Texture Plt_Texture;
 Plt_Texture *plt_texture_create(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format);
 void plt_texture_destroy(Plt_Texture **texture);
+
+Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format, void *bytes);
+Plt_Texture *plt_texture_load(const char *path);
 
 Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
 void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f value);

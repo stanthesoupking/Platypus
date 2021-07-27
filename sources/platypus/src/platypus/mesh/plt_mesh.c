@@ -62,6 +62,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 3, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 4, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 5, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
+
+	plt_mesh_set_uv(cube, 0, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 1, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 2, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 3, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 4, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 5, (Plt_Vector2f){ 0.0f, 1.0f });
 	
 	// back
 	plt_mesh_set_position(cube, 6, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
@@ -70,6 +77,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 9, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 10, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 11, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+
+	plt_mesh_set_uv(cube, 6, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 7, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 8, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 9, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 10, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 11, (Plt_Vector2f){ 0.0f, 1.0f });
 	
 	// top
 	plt_mesh_set_position(cube, 12, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
@@ -78,6 +92,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 15, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 16, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 17, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
+
+	plt_mesh_set_uv(cube, 12, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 13, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 14, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 15, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 16, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 17, (Plt_Vector2f){ 0.0f, 1.0f });
 	
 	// bottom
 	plt_mesh_set_position(cube, 18, (Plt_Vector3f){-hsize.x, -hsize.y, -hsize.z});
@@ -86,6 +107,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 21, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 22, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 23, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+
+	plt_mesh_set_uv(cube, 18, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 19, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 20, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 21, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 22, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 23, (Plt_Vector2f){ 0.0f, 1.0f });
 	
 	// left
 	plt_mesh_set_position(cube, 24, (Plt_Vector3f){-hsize.x, -hsize.y, -hsize.z});
@@ -94,6 +122,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 27, (Plt_Vector3f){-hsize.x,  hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 28, (Plt_Vector3f){-hsize.x,  hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 29, (Plt_Vector3f){-hsize.x, -hsize.y,  hsize.z});
+
+	plt_mesh_set_uv(cube, 24, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 25, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 26, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 27, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 28, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 29, (Plt_Vector2f){ 0.0f, 1.0f });
 	
 	// right
 	plt_mesh_set_position(cube, 30, (Plt_Vector3f){ hsize.x, -hsize.y, -hsize.z});
@@ -102,6 +137,13 @@ Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size) {
 	plt_mesh_set_position(cube, 33, (Plt_Vector3f){ hsize.x,  hsize.y, -hsize.z});
 	plt_mesh_set_position(cube, 34, (Plt_Vector3f){ hsize.x,  hsize.y,  hsize.z});
 	plt_mesh_set_position(cube, 35, (Plt_Vector3f){ hsize.x, -hsize.y,  hsize.z});
+
+	plt_mesh_set_uv(cube, 30, (Plt_Vector2f){ 0.0f, 0.0f });
+	plt_mesh_set_uv(cube, 31, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 32, (Plt_Vector2f){ 0.0f, 1.0f });
+	plt_mesh_set_uv(cube, 33, (Plt_Vector2f){ 1.0f, 0.0f });
+	plt_mesh_set_uv(cube, 34, (Plt_Vector2f){ 1.0f, 1.0f });
+	plt_mesh_set_uv(cube, 35, (Plt_Vector2f){ 0.0f, 1.0f });
 
 	return cube;
 }

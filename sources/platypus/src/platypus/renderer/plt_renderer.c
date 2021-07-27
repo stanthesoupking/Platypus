@@ -110,6 +110,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		Plt_Vector4f pos[3];
 		Plt_Vector4f wpos[3];
 		Plt_Vector2i spos[3];
+		Plt_Vector2f uvs[3];
 
 		for (unsigned int j = 0; j < 3; ++j) {
 			pos[j] = (Plt_Vector4f) {
@@ -118,6 +119,8 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				mesh->position_z[i + j],
 				1.0f
 			};
+			
+			uvs[j] = plt_mesh_get_uv(mesh, i + j);
 
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
 			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
@@ -170,9 +173,15 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					if (depth_sample < depth) {
 						continue;
 					}
+					
+					Plt_Vector2f uv = {};
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
+					
 					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
 
-					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(weights.x * 255, weights.y * 255, weights.z * 255, 255));
+					plt_renderer_poke_pixel(renderer, pixel_pos, plt_color8_make(uv.x * 255, uv.y * 255, 0.0f, 255));
 				}
 			}
 		}
