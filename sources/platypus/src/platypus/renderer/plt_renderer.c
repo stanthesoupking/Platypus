@@ -110,6 +110,9 @@ int32x4_t plt_renderer_orient2d(int32x4_t a_x, int32x4_t a_y, int32x4_t b_x, int
 }
 
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+	Plt_Vector3f light_direction = plt_vector3f_normalize((Plt_Vector3f){-0.75f,-0.25f,0});
+	float ambient_light = 0.2f;
+
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
 		Plt_Vector4f pos[3];
 
@@ -118,7 +121,11 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 		Plt_Vector4f wpos[3];
 		Plt_Vector2f uvs[3];
+		Plt_Vector3f normals[3];
+		Plt_Vector3f face_normal = {};
+		float lighting[3];
 
+		bool visible = false;
 		for (unsigned int j = 0; j < 3; ++j) {
 			pos[j] = (Plt_Vector4f) {
 				mesh->position_x[i + j],
@@ -128,6 +135,15 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			};
 			
 			uvs[j] = plt_mesh_get_uv(mesh, i + j);
+
+			Plt_Vector3f model_normal = plt_mesh_get_normal(mesh, i + j);
+			Plt_Vector4f world_normal = plt_matrix_multiply_vector4f(renderer->model_matrix, (Plt_Vector4f){model_normal.x, model_normal.y, model_normal.z, 0.0f});
+			normals[j] = plt_vector3f_normalize((Plt_Vector3f){world_normal.x, world_normal.y, world_normal.z});
+
+			face_normal = plt_vector3f_add(face_normal, normals[j]);
+
+			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], light_direction), 0);
+			lighting[j] = plt_clamp(light_amount + ambient_light, 0.0f, 1.0f);
 
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
 			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
@@ -146,10 +162,10 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			bounds_max.y = plt_max(spos_y[j][0], bounds_max.y);
 		}
 
-		bounds_min.x = plt_max(bounds_min.x, 0);
-		bounds_min.y = plt_max(bounds_min.y, 0);
-		bounds_max.x = plt_min(bounds_max.x, renderer->framebuffer->width);
-		bounds_max.y = plt_min(bounds_max.y, renderer->framebuffer->height);
+		bounds_min.x = plt_clamp(bounds_min.x, 0, (int)renderer->framebuffer->width);
+		bounds_min.y = plt_clamp(bounds_min.y, 0, (int)renderer->framebuffer->height);
+		bounds_max.x = plt_clamp(bounds_max.x, 0, (int)renderer->framebuffer->width);
+		bounds_max.y = plt_clamp(bounds_max.y, 0, (int)renderer->framebuffer->height);
 
 		// Half-space triangle rasterization
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
@@ -161,16 +177,16 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				int32x4_t c2 = plt_renderer_orient2d(spos_x[2], spos_y[2], spos_x[0], spos_y[0], p_x, p_y);
 				int32x4_t c3 = plt_renderer_orient2d(spos_x[0], spos_y[0], spos_x[1], spos_y[1], p_x, p_y);
 
-				for (int i = 0; i < 4; ++i) {
-					if ((c1[i] <= 0) && (c2[i] <= 0) && (c3[i] <= 0)) {
-						if (x + i >= bounds_max.x) {
+				for (int j = 0; j < 4; ++j) {
+					if ((c1[j] <= 0) && (c2[j] <= 0) && (c3[j] <= 0)) {
+						if (x + j >= bounds_max.x) {
 							continue;
 						}
-						float sum = c1[i] + c2[i] + c3[i];
+						float sum = c1[j] + c2[j] + c3[j];
 						if (sum == 0) {
 							continue;
 						}
-						Plt_Vector3f weights = {c1[i] / sum, c2[i] / sum, c3[i] / sum};
+						Plt_Vector3f weights = {c1[j] / sum, c2[j] / sum, c3[j] / sum};
 
 						Plt_Vector4f world_pos = {};
 						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
@@ -180,7 +196,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 						world_pos.x /= world_pos.w;
 						world_pos.y /= world_pos.w;
 						
-						Plt_Vector2i pixel_pos = (Plt_Vector2i){x + i, y};
+						Plt_Vector2i pixel_pos = (Plt_Vector2i){x + j, y};
 						
 						float depth = world_pos.z;
 						float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
@@ -189,13 +205,26 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 						}
 						plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
 
+						Plt_Vector3f normal = {};
+						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[0], weights.x));
+						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[1], weights.y));
+						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[2], weights.z));
+		
+						float light_amount = 0.0f;
+						light_amount += lighting[0] * weights.x;
+						light_amount += lighting[1] * weights.y;
+						light_amount += lighting[2] * weights.z;
+
 						Plt_Vector2f uv = {};
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
 
 						Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
-						plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){tex_color.x * 255, tex_color.y * 255, tex_color.z * 255, 255});
+						
+						Plt_Vector4f lit_color = plt_vector4f_multiply_scalar(tex_color, light_amount);
+						
+						plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){lit_color.x * 255, lit_color.y * 255, lit_color.z * 255, 255});
 					}
 				}
 			}

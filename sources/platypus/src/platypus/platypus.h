@@ -53,8 +53,12 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
+float plt_vector3f_dot_product(Plt_Vector3f a, Plt_Vector3f b);
+
+Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v);
 
 Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b);
+Plt_Vector3f plt_vector3f_add(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
 
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);

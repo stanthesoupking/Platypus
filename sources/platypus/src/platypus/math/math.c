@@ -109,8 +109,25 @@ float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y + a.y * b.x;
 }
 
+float plt_vector3f_dot_product(Plt_Vector3f a, Plt_Vector3f b) {
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
+Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v) {
+	float magnitude = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+	return (Plt_Vector3f) {
+		v.x / magnitude,
+		v.y / magnitude,
+		v.z / magnitude
+	};
+}
+
 Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b) {
 	return (Plt_Vector2f){ a.x + b.x, a.y + b.y};
+}
+
+Plt_Vector3f plt_vector3f_add(Plt_Vector3f a, Plt_Vector3f b) {
+	return (Plt_Vector3f){ a.x + b.x, a.y + b.y, a.z + b.z};
 }
 
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b) {
