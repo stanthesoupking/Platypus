@@ -153,7 +153,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
 				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
 
-				if (((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) || ((c1 >= 0) && (c2 >= 0) && (c3 >= 0))) {
+				if ((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) {
 					float sum = c1 + c2 + c3;
 					Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
 
