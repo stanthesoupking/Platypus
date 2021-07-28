@@ -104,7 +104,7 @@ float plt_renderer_perpendicular_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y - a.y * b.x;
 };
 
-float plt_renderer_orient2d(Plt_Vector2f a, Plt_Vector2f b, Plt_Vector2f c)
+int plt_renderer_orient2d(Plt_Vector2i a, Plt_Vector2i b, Plt_Vector2i c)
 {
     return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
@@ -148,13 +148,16 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		// Half-space triangle rasterization
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
 			for (int x = bounds_min.x; x < bounds_max.x; ++x) {
-				Plt_Vector2f p = { x, y };
-				float c1 = plt_renderer_orient2d((Plt_Vector2f){spos[1].x,spos[1].y}, (Plt_Vector2f){spos[2].x,spos[2].y}, p);
-				float c2 = plt_renderer_orient2d((Plt_Vector2f){spos[2].x,spos[2].y}, (Plt_Vector2f){spos[0].x,spos[0].y}, p);
-				float c3 = plt_renderer_orient2d((Plt_Vector2f){spos[0].x,spos[0].y}, (Plt_Vector2f){spos[1].x,spos[1].y}, p);
+				Plt_Vector2i p = { x, y };
+				int c1 = plt_renderer_orient2d(spos[1], spos[2], p);
+				int c2 = plt_renderer_orient2d(spos[2], spos[0], p);
+				int c3 = plt_renderer_orient2d(spos[0], spos[1], p);
 
 				if ((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) {
 					float sum = c1 + c2 + c3;
+					if (sum == 0) {
+						continue;
+					}
 					Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
 
 					Plt_Vector4f world_pos = {};
