@@ -5,6 +5,10 @@
 
 // MARK: Math
 
+#define plt_min(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define plt_max(X, Y) (((X) > (Y)) ? (X) : (Y))
+#define plt_clamp(V, MIN, MAX) (plt_min(plt_max(V, MIN), MAX))
+
 #define PLT_PI 3.1415926535897932384626
 
 typedef struct Plt_Vector2i {
@@ -115,6 +119,8 @@ Plt_Mesh *plt_mesh_create(int vertex_count);
 void plt_mesh_destroy(Plt_Mesh **mesh);
 
 Plt_Mesh *plt_mesh_create_cube(Plt_Vector3f size);
+
+Plt_Mesh *plt_mesh_load_ply(const char *path);
 
 void plt_mesh_set_position(Plt_Mesh *mesh, int index, Plt_Vector3f position);
 Plt_Vector3f plt_mesh_get_position(Plt_Mesh *mesh, int index);

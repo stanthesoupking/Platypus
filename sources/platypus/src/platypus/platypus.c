@@ -3,5 +3,6 @@
 #include "framebuffer/plt_framebuffer.c"
 #include "math/math.c"
 #include "mesh/plt_mesh.c"
+#include "mesh/plt_mesh_ply.c"
 #include "renderer/plt_renderer.c"
 #include "texture/plt_texture.c"
