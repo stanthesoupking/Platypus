@@ -104,16 +104,19 @@ float plt_renderer_perpendicular_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y - a.y * b.x;
 };
 
-int plt_renderer_orient2d(Plt_Vector2i a, Plt_Vector2i b, Plt_Vector2i c)
+int32x4_t plt_renderer_orient2d(int32x4_t a_x, int32x4_t a_y, int32x4_t b_x, int32x4_t b_y, int32x4_t c_x, int32x4_t c_y)
 {
-    return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+	return vsubq_s32(vmulq_s32(vsubq_s32(b_x, a_x), vsubq_s32(c_y, a_y)), vmulq_s32(vsubq_s32(b_y, a_y), vsubq_s32(c_x, a_x)));
 }
 
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
 		Plt_Vector4f pos[3];
+
+		int32x4_t spos_x[3];
+		int32x4_t spos_y[3];
+
 		Plt_Vector4f wpos[3];
-		Plt_Vector2i spos[3];
 		Plt_Vector2f uvs[3];
 
 		for (unsigned int j = 0; j < 3; ++j) {
@@ -128,16 +131,19 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
 			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
-			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){wpos[j].x, wpos[j].y});
+
+			Plt_Vector2i spos_v = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){wpos[j].x, wpos[j].y});
+			spos_x[j] = (int32x4_t){spos_v.x, spos_v.x, spos_v.x, spos_v.x};
+			spos_y[j] = (int32x4_t){spos_v.y, spos_v.y, spos_v.y, spos_v.y};
 		}
 
-		Plt_Vector2i bounds_min = spos[0];
-		Plt_Vector2i bounds_max = spos[0];
+		Plt_Vector2i bounds_min = {spos_x[0][0], spos_y[0][0]};
+		Plt_Vector2i bounds_max = {spos_x[0][0], spos_y[0][0]};
 		for (unsigned int j = 1; j < 3; ++j) {
-			bounds_min.x = plt_min(spos[j].x, bounds_min.x);
-			bounds_min.y = plt_min(spos[j].y, bounds_min.y);
-			bounds_max.x = plt_max(spos[j].x, bounds_max.x);
-			bounds_max.y = plt_max(spos[j].y, bounds_max.y);
+			bounds_min.x = plt_min(spos_x[j][0], bounds_min.x);
+			bounds_min.y = plt_min(spos_y[j][0], bounds_min.y);
+			bounds_max.x = plt_max(spos_x[j][0], bounds_max.x);
+			bounds_max.y = plt_max(spos_y[j][0], bounds_max.y);
 		}
 
 		bounds_min.x = plt_max(bounds_min.x, 0);
@@ -147,46 +153,47 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 		// Half-space triangle rasterization
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
-			for (int x = bounds_min.x; x < bounds_max.x; ++x) {
-				Plt_Vector2i p = { x, y };
-				int c1 = plt_renderer_orient2d(spos[1], spos[2], p);
-				int c2 = plt_renderer_orient2d(spos[2], spos[0], p);
-				int c3 = plt_renderer_orient2d(spos[0], spos[1], p);
+			for (int x = bounds_min.x; x < bounds_max.x; x += 4) {
+				int32x4_t p_x = {x, x + 1, x + 2, x + 3};
+				int32x4_t p_y = {y, y, y, y};
 
-				if ((c1 <= 0) && (c2 <= 0) && (c3 <= 0)) {
-					float sum = c1 + c2 + c3;
-					if (sum == 0) {
-						continue;
+				int32x4_t c1 = plt_renderer_orient2d(spos_x[1], spos_y[1], spos_x[2], spos_y[2], p_x, p_y);
+				int32x4_t c2 = plt_renderer_orient2d(spos_x[2], spos_y[2], spos_x[0], spos_y[0], p_x, p_y);
+				int32x4_t c3 = plt_renderer_orient2d(spos_x[0], spos_y[0], spos_x[1], spos_y[1], p_x, p_y);
+
+				for (int i = 0; i < 4; ++i) {
+					if ((c1[i] <= 0) && (c2[i] <= 0) && (c3[i] <= 0)) {
+						float sum = c1[i] + c2[i] + c3[i];
+						if (sum == 0) {
+							continue;
+						}
+						Plt_Vector3f weights = {c1[i] / sum, c2[i] / sum, c3[i] / sum};
+
+						Plt_Vector4f world_pos = {};
+						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
+						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
+						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
+
+						world_pos.x /= world_pos.w;
+						world_pos.y /= world_pos.w;
+						
+						Plt_Vector2i pixel_pos = (Plt_Vector2i){x + i, y};
+						
+						float depth = world_pos.z;
+						float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
+						if ((depth < 0) || (depth_sample < depth)) {
+							continue;
+						}
+						plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
+
+						Plt_Vector2f uv = {};
+						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
+						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
+						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
+
+						Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
+						plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){tex_color.x * 255, tex_color.y * 255, tex_color.z * 255, 255});
 					}
-					Plt_Vector3f weights = {c1 / sum, c2 / sum, c3 / sum};
-
-					Plt_Vector4f world_pos = {};
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
-
-					world_pos.x /= world_pos.w;
-					world_pos.y /= world_pos.w;
-					
-					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
-					
-					float depth = world_pos.z;
-					float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
-
-					if ((depth < 0) || (depth_sample < depth)) {
-						continue;
-					}
-					
-					Plt_Vector2f uv = {};
-					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
-					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
-					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
-
-					Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
-					
-					plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
-
-					plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){tex_color.x * 255.0f, tex_color.y * 255.0f, tex_color.z * 255.0f, 255});
 				}
 			}
 		}
