@@ -163,6 +163,9 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 
 				for (int i = 0; i < 4; ++i) {
 					if ((c1[i] <= 0) && (c2[i] <= 0) && (c3[i] <= 0)) {
+						if (x + i >= bounds_max.x) {
+							continue;
+						}
 						float sum = c1[i] + c2[i] + c3[i];
 						if (sum == 0) {
 							continue;
