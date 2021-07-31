@@ -105,7 +105,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 				if ((cx1 <= 0) && (cx2 <= 0) && (cx3 <= 0)) {
 					float sum = cx1 + cx2 + cx3;
 					if (sum == 0) {
-						continue;
+						goto end;
 					}
 					
 					int framebuffer_pixel_index = y * framebuffer_width + x;
@@ -120,7 +120,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					float depth_sample = depth_buffer[framebuffer_pixel_index];
 					if ((depth < 0) || (depth_sample < depth)) {
-						continue;
+						goto end;
 					}
 					depth_buffer[framebuffer_pixel_index] = depth;
 					
@@ -149,6 +149,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					framebuffer_pixels[framebuffer_pixel_index] = tex_color;
 				}
 				
+				end:
 				cx1 += c1_inc.x; cx2 += c2_inc.x; cx3 += c3_inc.x;
 			}
 			
