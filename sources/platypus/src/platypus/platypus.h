@@ -82,6 +82,8 @@ typedef struct Plt_Color8 {
 
 Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
+Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
+
 // MARK: Renderer
 
 typedef enum Plt_Primitive_Type {
@@ -143,24 +145,19 @@ Plt_Vector2f plt_mesh_get_uv(Plt_Mesh *mesh, int index);
 
 // MARK: Texture
 
-typedef enum Plt_Texture_Format {
-	Plt_Texture_Format_Byte,
-	Plt_Texture_Format_Float
-} Plt_Texture_Format;
-
 typedef struct Plt_Texture Plt_Texture;
-Plt_Texture *plt_texture_create(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format);
+Plt_Texture *plt_texture_create(unsigned int width, unsigned int height);
 void plt_texture_destroy(Plt_Texture **texture);
 
-Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned int height, unsigned int channels, Plt_Texture_Format format, void *bytes);
+Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned int height, void *bytes);
 Plt_Texture *plt_texture_load(const char *path);
 
-Plt_Vector4f plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
-void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Vector4f value);
+Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
+void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value);
 
-Plt_Vector4f plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
+Plt_Color8 plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
 
-void plt_texture_clear(Plt_Texture *texture, Plt_Vector4f value);
+void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value);
 
 Plt_Vector2i plt_texture_get_size(Plt_Texture *texture);
 

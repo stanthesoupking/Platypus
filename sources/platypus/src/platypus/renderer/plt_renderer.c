@@ -128,7 +128,6 @@ float plt_renderer_perpendicular_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 int plt_renderer_orient2d(Plt_Vector2i a, Plt_Vector2i b, Plt_Vector2i c)
 {
 	return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-	//	return vsubq_s32(vmulq_s32(vsubq_s32(b_x, a_x), vsubq_s32(c_y, a_y)), vmulq_s32(vsubq_s32(b_y, a_y), vsubq_s32(c_x, a_x)));
 }
 
 Plt_Vector2i plt_renderer_get_c_increment(Plt_Vector2i a, Plt_Vector2i b) {
@@ -242,16 +241,11 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
 					
-					Plt_Vector4f world_pos = {};
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
-					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
+					float depth = 0;
+					depth += (pos[0].z * weights.x) / pos[0].w;
+					depth += (pos[1].z * weights.y) / pos[1].w;
+					depth += (pos[2].z * weights.z) / pos[2].w;
 					
-					world_pos.x /= world_pos.w;
-					world_pos.y /= world_pos.w;
-					
-					
-					float depth = world_pos.z / world_pos.w;
 					float depth_sample = depth_buffer[framebuffer_pixel_index];
 					if ((depth < 0) || (depth_sample < depth)) {
 						continue;
@@ -273,11 +267,11 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
 					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
 					
-					Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
+					Plt_Color8 tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : plt_color8_make(255, 0, 255, 255);
 					
-					Plt_Vector4f lit_color = plt_vector4f_multiply_scalar(tex_color, light_amount);
+					Plt_Color8 lit_color = plt_color8_multiply_scalar(tex_color, light_amount);
 					
-					framebuffer_pixels[framebuffer_pixel_index] = (Plt_Color8){lit_color.x * 255, lit_color.y * 255, lit_color.z * 255, 255};
+					framebuffer_pixels[framebuffer_pixel_index] = lit_color;
 				}
 				
 				cx1 += c1_inc.x; cx2 += c2_inc.x; cx3 += c3_inc.x;
