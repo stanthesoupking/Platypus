@@ -18,6 +18,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	float *depth_buffer = renderer->depth_buffer;
 	int framebuffer_width = renderer->framebuffer.width;
 	int framebuffer_height = renderer->framebuffer.height;
+	Plt_Color8 render_color = renderer->render_color;
 	
 	#if RASTER_LIGHTING_MODEL != 0
 	Plt_Vector3f light_direction = plt_vector3f_normalize((Plt_Vector3f){-0.75f,-0.25f,0});
@@ -138,7 +139,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
 						tex_color = plt_texture_sample(renderer->bound_texture, uv);
 					#else
-						tex_color = plt_color8_make(255, 0, 255, 255);
+						tex_color = render_color;
 					#endif
 					
 					#if RASTER_LIGHTING_MODEL == 1

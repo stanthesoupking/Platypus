@@ -26,6 +26,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->point_size = 1;
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
 	renderer->lighting_model = Plt_Lighting_Model_Unlit;
+	renderer->render_color = plt_color8_make(255,255,255,255);
 	
 	renderer->bound_texture = NULL;
 	
@@ -95,7 +96,7 @@ void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		}
 		
 		Plt_Vector2f clip_xy = {pos.x / pos.w, pos.y / pos.w};
-		plt_renderer_draw_point(renderer, clip_xy, plt_color8_make(255, 0, 0, 255));
+		plt_renderer_draw_point(renderer, clip_xy, renderer->render_color);
 	}
 }
 
@@ -220,6 +221,10 @@ void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size) {
 
 void plt_renderer_set_lighting_model(Plt_Renderer *renderer, Plt_Lighting_Model model) {
 	renderer->lighting_model = model;
+}
+
+void plt_renderer_set_render_color(Plt_Renderer *renderer, Plt_Color8 color) {
+	renderer->render_color = color;
 }
 
 void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture) {

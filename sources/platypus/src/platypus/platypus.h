@@ -94,7 +94,7 @@ typedef enum Plt_Primitive_Type {
 
 typedef enum Plt_Lighting_Model {
 	Plt_Lighting_Model_Unlit = 0,
-	Plt_Lighting_Model_Vertex = 1,
+	Plt_Lighting_Model_Vertex_Lit = 1,
 } Plt_Lighting_Model;
 
 
@@ -108,6 +108,7 @@ void plt_renderer_present(Plt_Renderer *renderer);
 void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type);
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
 void plt_renderer_set_lighting_model(Plt_Renderer *renderer, Plt_Lighting_Model model);
+void plt_renderer_set_render_color(Plt_Renderer *renderer, Plt_Color8 color);
 void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture);
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
