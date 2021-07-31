@@ -5,5 +5,5 @@ inline Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned cha
 }
 
 inline Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s) {
-	return (Plt_Color8){color.r * s, color.g * s, color.b * s, color.a * s};
+	return (Plt_Color8){color.b * s, color.g * s, color.r * s, color.a * s};
 }

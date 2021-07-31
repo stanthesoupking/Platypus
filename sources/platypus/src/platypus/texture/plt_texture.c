@@ -55,11 +55,11 @@ Plt_Texture *plt_texture_load(const char *path) {
 		return NULL;
 	}
 	
-//	unsigned int total_pixels = width * height;
-//	for (unsigned int i = 0; i < total_pixels; ++i) {
-//		Plt_Color8 p = pixels[i];
-//		pixels[i] = (Plt_Color8){p.r, p.g, p.b, p.a};
-//	}
+	unsigned int total_pixels = width * height;
+	for (unsigned int i = 0; i < total_pixels; ++i) {
+		Plt_Color8 p = pixels[i];
+		pixels[i] = (Plt_Color8){p.r, p.g, p.b, p.a};
+	}
 
 	return plt_texture_create_with_bytes_nocopy(width, height, pixels);
 }
