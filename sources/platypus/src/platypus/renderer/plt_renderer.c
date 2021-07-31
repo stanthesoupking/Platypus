@@ -27,6 +27,10 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
 	renderer->lighting_model = Plt_Lighting_Model_Unlit;
 	renderer->render_color = plt_color8_make(255,255,255,255);
+
+	renderer->ambient_lighting_color = plt_color8_make(40, 40, 40, 255);
+	renderer->directional_lighting_color = plt_color8_make(255, 255, 255, 255);
+	renderer->directional_lighting_direction = (Plt_Vector3f){0,-1.0f,0};
 	
 	renderer->bound_texture = NULL;
 	
@@ -231,19 +235,35 @@ void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
 	renderer->bound_texture = texture;
 }
 
+void plt_renderer_set_ambient_lighting_color(Plt_Renderer *renderer, Plt_Color8 color) {
+	renderer->ambient_lighting_color = color;
+}
+
+void plt_renderer_set_directional_lighting_color(Plt_Renderer *renderer, Plt_Color8 color) {
+	renderer->directional_lighting_color = color;
+}
+
+void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt_Vector3f direction) {
+	renderer->directional_lighting_direction = direction;
+}
+
+void plt_renderer_update_mvp(Plt_Renderer *renderer) {
+	renderer->mvp_matrix = plt_matrix_multiply(plt_matrix_multiply(renderer->projection_matrix, renderer->view_matrix), renderer->model_matrix);//plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix));
+}
+
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {
 	renderer->model_matrix = matrix;
-	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix));
+	plt_renderer_update_mvp(renderer);
 }
 
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {
 	renderer->view_matrix = matrix;
-	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix));
+	plt_renderer_update_mvp(renderer);
 }
 
 void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {
 	renderer->projection_matrix = matrix;
-	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix));
+	plt_renderer_update_mvp(renderer);
 }
 
 Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {

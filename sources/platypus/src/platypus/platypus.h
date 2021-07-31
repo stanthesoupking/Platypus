@@ -67,6 +67,7 @@ Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b);
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b);
 
+Plt_Vector2f plt_vector2f_divide_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b);
 
 Plt_Vector3f plt_vector3f_lerp(Plt_Vector3f a, Plt_Vector3f b, float i);
@@ -82,6 +83,8 @@ typedef struct Plt_Color8 {
 
 Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
+Plt_Color8 plt_color8_add(Plt_Color8 a, Plt_Color8 b);
+Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
 
 // MARK: Renderer
@@ -110,6 +113,10 @@ void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
 void plt_renderer_set_lighting_model(Plt_Renderer *renderer, Plt_Lighting_Model model);
 void plt_renderer_set_render_color(Plt_Renderer *renderer, Plt_Color8 color);
 void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture);
+
+void plt_renderer_set_ambient_lighting_color(Plt_Renderer *renderer, Plt_Color8 color);
+void plt_renderer_set_directional_lighting_color(Plt_Renderer *renderer, Plt_Color8 color);
+void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt_Vector3f direction);
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);

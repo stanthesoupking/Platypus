@@ -20,10 +20,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	int framebuffer_height = renderer->framebuffer.height;
 	Plt_Color8 render_color = renderer->render_color;
 	
-	#if RASTER_LIGHTING_MODEL != 0
-	Plt_Vector3f light_direction = plt_vector3f_normalize((Plt_Vector3f){-0.75f,-0.25f,0});
-	float ambient_light = 0.2f;
-	#endif
+	Plt_Vector3f normalized_light_direction = plt_vector3f_normalize(renderer->directional_lighting_direction);
 	
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
 		Plt_Vector4f pos[3];
@@ -38,7 +35,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		Plt_Vector3f face_normal = {};
 		
 		#if RASTER_LIGHTING_MODEL == 1
-		float lighting[3];
+		Plt_Color8 lighting[3];
 		#endif
 		
 		bool visible = false;
@@ -61,8 +58,10 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			
 			face_normal = plt_vector3f_add(face_normal, normals[j]);
 
-			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], light_direction), 0);
-			lighting[j] = plt_clamp(light_amount + ambient_light, 0.0f, 1.0f);
+			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], normalized_light_direction), 0);
+			Plt_Color8 directional_lighting = plt_color8_multiply_scalar(renderer->directional_lighting_color, light_amount);
+
+			lighting[j] = plt_color8_add(directional_lighting, renderer->ambient_lighting_color);
 			#endif
 			
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
@@ -125,10 +124,10 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					depth_buffer[framebuffer_pixel_index] = depth;
 					
 					#if RASTER_LIGHTING_MODEL == 1
-					float light_amount = 0.0f;
-					light_amount += lighting[0] * weights.x;
-					light_amount += lighting[1] * weights.y;
-					light_amount += lighting[2] * weights.z;
+					Plt_Color8 pixel_lighting = {};
+					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[0], weights.x));
+					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[1], weights.y));
+					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[2], weights.z));
 					#endif
 					
 					Plt_Color8 tex_color;
@@ -143,7 +142,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					#endif
 					
 					#if RASTER_LIGHTING_MODEL == 1
-						tex_color = plt_color8_multiply_scalar(tex_color, light_amount);
+						tex_color = plt_color8_multiply(tex_color, pixel_lighting);
 					#endif
 					
 					framebuffer_pixels[framebuffer_pixel_index] = tex_color;

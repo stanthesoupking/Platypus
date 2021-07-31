@@ -64,14 +64,14 @@ Plt_Texture *plt_texture_load(const char *path) {
 	return plt_texture_create_with_bytes_nocopy(width, height, pixels);
 }
 
-Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
+inline Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
 	pos.x = plt_clamp(pos.x, 0, texture->width);
 	pos.y = plt_clamp(pos.y, 0, texture->height);
 
 	return texture->data[pos.y * texture->width + pos.x];
 }
 
-void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value) {
+inline void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value) {
 	if (pos.x < 0 || pos.x >= texture->width || pos.y < 0 || pos.y >= texture->height) {
 		return;
 	}

@@ -150,6 +150,10 @@ Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b) {
 	return (Plt_Vector4f){ a.x * b, a.y * b, a.z * b, a.w * b };
 }
 
+Plt_Vector2f plt_vector2f_divide_scalar(Plt_Vector2f a, float b) {
+		return (Plt_Vector2f){ a.x / b, a.y / b };
+}
+
 Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b) {
 	return (Plt_Vector3f){ a.x / b, a.y / b, a.z / b };
 }

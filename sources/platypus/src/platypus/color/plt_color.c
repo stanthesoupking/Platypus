@@ -1,9 +1,38 @@
 #include "platypus/platypus.h"
 
 inline Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
-	return (Plt_Color8) {b, g, r, a};
+	return (Plt_Color8){b, g, r, a};
+}
+
+inline Plt_Color8 plt_color8_add(Plt_Color8 a, Plt_Color8 b) {
+	return (Plt_Color8){
+		plt_min((int)a.b + (int)b.b, 255),
+		plt_min((int)a.g + (int)b.g, 255),
+		plt_min((int)a.r + (int)b.r, 255),
+		plt_min((int)a.a + (int)b.a, 255)
+	};
+}
+
+inline Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b) {
+	// return (Plt_Color8){
+	// 	a.b * (((float)b.b) / 255.0f),
+	// 	a.g * (((float)b.g) / 255.0f),
+	// 	a.r * (((float)b.r) / 255.0f),
+	// 	a.a * (((float)b.a) / 255.0f)
+	// };
+	return (Plt_Color8){
+		(a.b * b.b) / 255,
+		(a.g * b.g) / 255,
+		(a.r * b.r) / 255,
+		(a.a * b.a) / 255
+	};
 }
 
 inline Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s) {
-	return (Plt_Color8){color.b * s, color.g * s, color.r * s, color.a * s};
+	return (Plt_Color8){
+		plt_min((float)color.b * (float)s, 255),
+		plt_min((float)color.g * (float)s, 255),
+		plt_min((float)color.r * (float)s, 255),
+		plt_min((float)color.a * (float)s, 255)
+	};
 }

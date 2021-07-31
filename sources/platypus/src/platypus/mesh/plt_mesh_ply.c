@@ -355,7 +355,7 @@ Plt_Mesh *plt_mesh_load_ply(const char *path) {
 			indices[index_count++] = values[3];
 			indices[index_count++] = values[1];
 		} else {
-			abort();
+//			abort();
 		}
 	}
 
