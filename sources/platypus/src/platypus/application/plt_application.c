@@ -39,7 +39,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	plt_assert(application->window, "SDL window creation failed.\n");
 
 	application->should_quit = false;
-	application->renderer = plt_renderer_create(application, &application->framebuffer);
+	application->renderer = plt_renderer_create(application, application->framebuffer);
 
 	application->framebuffer_surface = NULL;
 	plt_application_update_framebuffer(application);
@@ -80,11 +80,6 @@ void plt_application_update_framebuffer(Plt_Application *application) {
 	SDL_Surface *window_surface = SDL_GetWindowSurface(application->window);
 
 	if (application->scale == 1) {
-		if ((application->framebuffer.width != window_surface->w) || (application->framebuffer.height != window_surface->h)) {
-			Plt_Texture *depth_texture = plt_texture_create(window_surface->w, window_surface->h, 1, Plt_Texture_Format_Float);
-			plt_renderer_set_depth_texture(application->renderer, depth_texture);
-		}
-
 		application->framebuffer = (Plt_Framebuffer) {
 			.pixels = window_surface->pixels,
 			.width = window_surface->w,
@@ -100,9 +95,6 @@ void plt_application_update_framebuffer(Plt_Application *application) {
 
 		if (!application->framebuffer_surface) {
 			application->framebuffer_surface = SDL_CreateRGBSurface(0, scaled_size.x, scaled_size.y, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
-
-			Plt_Texture *depth_texture = plt_texture_create(scaled_size.x, scaled_size.y, 1, Plt_Texture_Format_Float);
-			plt_renderer_set_depth_texture(application->renderer, depth_texture);
 		}
 
 		application->framebuffer = (Plt_Framebuffer) {
@@ -111,6 +103,8 @@ void plt_application_update_framebuffer(Plt_Application *application) {
 			.height = scaled_size.y
 		};
 	}
+	
+	plt_renderer_update_framebuffer(application->renderer, application->framebuffer);
 }
 
 SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {

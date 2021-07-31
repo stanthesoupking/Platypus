@@ -7,8 +7,11 @@
 
 typedef struct Plt_Renderer {
 	Plt_Application *application;
-	Plt_Framebuffer *framebuffer;
-	Plt_Texture *depth_texture;
+	Plt_Framebuffer framebuffer;
+	
+	float *depth_buffer;
+	unsigned int depth_buffer_width;
+	unsigned int depth_buffer_height;
 	
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
@@ -29,11 +32,10 @@ void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh);
 void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh);
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh);
 
-Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer *framebuffer) {
+Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer framebuffer) {
 	Plt_Renderer *renderer = malloc(sizeof(Plt_Renderer));
 	
 	renderer->application = application;
-	renderer->framebuffer = framebuffer;
 	
 	renderer->model_matrix =
 	renderer->view_matrix =
@@ -45,22 +47,39 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	
 	renderer->bound_texture = NULL;
 	
-	renderer->depth_texture = NULL;
+	renderer->depth_buffer_width = 0;
+	renderer->depth_buffer_height = 0;
+	renderer->depth_buffer = NULL;
+	
+	plt_renderer_update_framebuffer(renderer, framebuffer);
 	
 	return renderer;
 }
 
 void plt_renderer_destroy(Plt_Renderer **renderer) {
-	if ((*renderer)->depth_texture) {
-		plt_texture_destroy(&(*renderer)->depth_texture);
+	if ((*renderer)->depth_buffer) {
+		free((*renderer)->depth_buffer);
 	}
 	
 	free(*renderer);
 	*renderer = NULL;
 }
 
+void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer framebuffer) {
+	renderer->framebuffer = framebuffer;
+	
+	if ((renderer->depth_buffer_width != framebuffer.width) || (renderer->depth_buffer_height != framebuffer.height)) {
+		if (renderer->depth_buffer) {
+			free(renderer->depth_buffer);
+		}
+		renderer->depth_buffer = malloc(sizeof(float) * framebuffer.width * framebuffer.height);
+		renderer->depth_buffer_width = framebuffer.width;
+		renderer->depth_buffer_height = framebuffer.height;
+	}
+}
+
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
-	Plt_Framebuffer framebuffer = *renderer->framebuffer;
+	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
 #ifdef __APPLE__
 	memset_pattern4(framebuffer.pixels, &clear_color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);
@@ -71,8 +90,10 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	}
 #endif
 	
-	float clear_depth = INFINITY;
-	plt_texture_clear(renderer->depth_texture, (Plt_Vector4f){clear_depth});
+	if (renderer->depth_buffer) {
+		float clear_depth = INFINITY;
+		memset_pattern4(renderer->depth_buffer, &clear_depth, sizeof(float) * renderer->depth_buffer_width * renderer->depth_buffer_height);
+	}
 }
 
 void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
@@ -132,6 +153,11 @@ int32x4_t plt_renderer_perp_dot(int32x4_t a_x, int32x4_t a_y, int32x4_t b_x, int
 }
 
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+	Plt_Color8 *framebuffer_pixels = renderer->framebuffer.pixels;
+	float *depth_buffer = renderer->depth_buffer;
+	int framebuffer_width = renderer->framebuffer.width;
+	int framebuffer_height = renderer->framebuffer.height;
+	
 	Plt_Vector3f light_direction = plt_vector3f_normalize((Plt_Vector3f){-0.75f,-0.25f,0});
 	float ambient_light = 0.2f;
 	
@@ -186,10 +212,10 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			bounds_max.y = plt_max(spos_y[j][0], bounds_max.y);
 		}
 		
-		bounds_min.x = plt_clamp(bounds_min.x, 0, (int)renderer->framebuffer->width);
-		bounds_min.y = plt_clamp(bounds_min.y, 0, (int)renderer->framebuffer->height);
-		bounds_max.x = plt_clamp(bounds_max.x, 0, (int)renderer->framebuffer->width);
-		bounds_max.y = plt_clamp(bounds_max.y, 0, (int)renderer->framebuffer->height);
+		bounds_min.x = plt_clamp(bounds_min.x, 0, framebuffer_width);
+		bounds_min.y = plt_clamp(bounds_min.y, 0, framebuffer_height);
+		bounds_max.x = plt_clamp(bounds_max.x, 0, framebuffer_width);
+		bounds_max.y = plt_clamp(bounds_max.y, 0, framebuffer_height);
 		
 		Plt_Vector2i c1_inc = plt_renderer_get_c_increment(spos[1], spos[2]);
 		Plt_Vector2i c2_inc = plt_renderer_get_c_increment(spos[2], spos[0]);
@@ -210,46 +236,48 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					if (sum == 0) {
 						continue;
 					}
+					
+					int framebuffer_pixel_index = y * framebuffer_width + x;
 					Plt_Vector3f weights = {cx1 / sum, cx2 / sum, cx3 / sum};
-					//
-					//						Plt_Vector4f world_pos = {};
-					//						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
-					//						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
-					//						world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
-					//
-					//						world_pos.x /= world_pos.w;
-					//						world_pos.y /= world_pos.w;
-					//
-					//
-					//						float depth = world_pos.z;
-					//						float depth_sample = plt_texture_get_pixel(renderer->depth_texture, pixel_pos).x;
-					//						if ((depth < 0) || (depth_sample < depth)) {
-					//							continue;
-					//						}
-					//						plt_texture_set_pixel(renderer->depth_texture, pixel_pos, (Plt_Vector4f){depth, 0, 0, 0});
-					//
-					//						Plt_Vector3f normal = {};
-					//						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[0], weights.x));
-					//						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[1], weights.y));
-					//						normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[2], weights.z));
-					//
-					//						float light_amount = 0.0f;
-					//						light_amount += lighting[0] * weights.x;
-					//						light_amount += lighting[1] * weights.y;
-					//						light_amount += lighting[2] * weights.z;
-					//
-					//						Plt_Vector2f uv = {};
-					//						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
-					//						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
-					//						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
-					//
-					//						Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
-					//
-					//						Plt_Vector4f lit_color = plt_vector4f_multiply_scalar(tex_color, 1.0f);
-					//
+					
 					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
-					plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){255, 255, 255, 255});
-					plt_renderer_poke_pixel(renderer, pixel_pos, (Plt_Color8){weights.x * 255, weights.y * 255, weights.z * 255, 255});
+					
+					Plt_Vector4f world_pos = {};
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[0], weights.x));
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[1], weights.y));
+					world_pos = plt_vector4f_add(world_pos, plt_vector4f_multiply_scalar(pos[2], weights.z));
+					
+					world_pos.x /= world_pos.w;
+					world_pos.y /= world_pos.w;
+					
+					
+					float depth = world_pos.z / world_pos.w;
+					float depth_sample = depth_buffer[framebuffer_pixel_index];
+					if ((depth < 0) || (depth_sample < depth)) {
+						continue;
+					}
+					depth_buffer[framebuffer_pixel_index] = depth;
+					
+					Plt_Vector3f normal = {};
+					normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[0], weights.x));
+					normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[1], weights.y));
+					normal = plt_vector3f_add(normal, plt_vector3f_multiply_scalar(normals[2], weights.z));
+					
+					float light_amount = 0.0f;
+					light_amount += lighting[0] * weights.x;
+					light_amount += lighting[1] * weights.y;
+					light_amount += lighting[2] * weights.z;
+					
+					Plt_Vector2f uv = {};
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
+					uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));
+					
+					Plt_Vector4f tex_color = renderer->bound_texture ? plt_texture_sample(renderer->bound_texture, uv) : (Plt_Vector4f){1,0,1,1};
+					
+					Plt_Vector4f lit_color = plt_vector4f_multiply_scalar(tex_color, light_amount);
+					
+					framebuffer_pixels[framebuffer_pixel_index] = (Plt_Color8){lit_color.x * 255, lit_color.y * 255, lit_color.z * 255, 255};
 				}
 				
 				cx1 += c1_inc.x; cx2 += c2_inc.x; cx3 += c3_inc.x;
@@ -261,7 +289,7 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 }
 
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	Plt_Framebuffer framebuffer = *renderer->framebuffer;
+	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
 	switch (renderer->primitive_type) {
 		case Plt_Primitive_Type_Point:
@@ -279,7 +307,7 @@ void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 }
 
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color) {
-	Plt_Framebuffer framebuffer = *renderer->framebuffer;
+	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
 	Plt_Vector2i origin_pixel = plt_renderer_clipspace_to_pixel(renderer, p);
 	
@@ -299,17 +327,17 @@ void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 
 }
 
 void plt_renderer_poke_pixel(Plt_Renderer *renderer, Plt_Vector2i p, Plt_Color8 color) {
-	if ((p.x < 0) || (p.y < 0) || (p.x >= renderer->framebuffer->width) || (p.y >= renderer->framebuffer->height)) {
+	if ((p.x < 0) || (p.y < 0) || (p.x >= renderer->framebuffer.width) || (p.y >= renderer->framebuffer.height)) {
 		return;
 	}
 	
-	renderer->framebuffer->pixels[p.y * renderer->framebuffer->width + p.x] = color;
+	renderer->framebuffer.pixels[p.y * renderer->framebuffer.width + p.x] = color;
 }
 
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p) {
 	return (Plt_Vector2i) {
-		(p.x + 1.0f) * 0.5f * renderer->framebuffer->width,
-		(p.y + 1.0f) * 0.5f * renderer->framebuffer->height,
+		(p.x + 1.0f) * 0.5f * renderer->framebuffer.width,
+		(p.y + 1.0f) * 0.5f * renderer->framebuffer.height,
 	};
 }
 
@@ -345,16 +373,5 @@ void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f m
 }
 
 Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {
-	return (Plt_Vector2i) { renderer->framebuffer->width, renderer->framebuffer->height };
-}
-
-void plt_renderer_set_depth_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
-	if (renderer->depth_texture) {
-		plt_texture_destroy(&renderer->depth_texture);
-	}
-	renderer->depth_texture = texture;
-}
-
-Plt_Texture *plt_renderer_get_depth_texture(Plt_Renderer *renderer) {
-	return renderer->depth_texture;
+	return (Plt_Vector2i) { renderer->framebuffer.width, renderer->framebuffer.height };
 }
