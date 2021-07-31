@@ -134,6 +134,10 @@ Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b) {
 	return (Plt_Vector4f){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 }
 
+Plt_Vector3f plt_vector3f_subtract(Plt_Vector3f a, Plt_Vector3f b) {
+	return (Plt_Vector3f){ a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b) {
 	return (Plt_Vector2f){ a.x * b, a.y * b };
 }
@@ -144,6 +148,19 @@ Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b) {
 
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b) {
 	return (Plt_Vector4f){ a.x * b, a.y * b, a.z * b, a.w * b };
+}
+
+Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b) {
+	return (Plt_Vector3f){ a.x / b, a.y / b, a.z / b };
+}
+
+Plt_Vector3f plt_vector3f_lerp(Plt_Vector3f a, Plt_Vector3f b, float i) {
+	float j = 1.0f - i;
+	return (Plt_Vector3f) {
+		a.x * i + b.x * j,
+		a.y * i + b.y * j,
+		a.z * i + b.z * j
+	};
 }
 
 float plt_math_rad2deg(float rad) {
