@@ -5,7 +5,8 @@
 #define NEON 1
 #include <arm_neon.h>
 #else
-//#define SSE 1
+#define SSE 1
+#include <xmmintrin.h>
 #endif
 
 typedef struct simd_float4 {
@@ -16,9 +17,11 @@ typedef struct simd_float4 {
 		
 		float v[4];
 
-		#ifdef NEON
+#ifdef NEON
 		float32x4_t neon_v;
-		#endif
+#elif SSE
+		__m128 sse_v;
+#endif
 	};
 } simd_float4;
 
@@ -63,7 +66,7 @@ simd_inline simd_float4 simd_float4_add(simd_float4 a, simd_float4 b) {
 	#ifdef NEON
 	return (simd_float4){ .neon_v = vaddq_f32(a.neon_v, b.neon_v) };
 	#elif SSE
-	
+	return (simd_float4) { .sse_v = _mm_add_ps(a.sse_v, b.sse_v) };
 	#else
 	return (simd_float4){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 	#endif
@@ -72,8 +75,6 @@ simd_inline simd_float4 simd_float4_add(simd_float4 a, simd_float4 b) {
 simd_inline float simd_float4_add_across(simd_float4 v) {
 	#ifdef NEON
 	return vaddvq_f32(v.neon_v);
-	#elif SSE
-	
 	#else
 	return v.x + v.y + v.z + v.w;
 	#endif
@@ -83,7 +84,8 @@ simd_inline simd_float4 simd_float4_multiply_add(simd_float4 a, simd_float4 b, s
 	#ifdef NEON
 	return (simd_float4) { .neon_v = vmlaq_f32(a.neon_v, b.neon_v, c.neon_v) };
 	#elif SSE
-	
+	// Is there a single SSE instruction for this?
+	return (simd_float4) { .sse_v = _mm_add_ps(a.sse_v, _mm_mul_ps(b.sse_v, c.sse_v)) };
 	#else
 	return (simd_float4){ a.x + b.x * c.x, a.y + b.y * c.y, a.z + b.z * c.z, a.w + b.w * c.w };
 	#endif
