@@ -1,9 +1,10 @@
 #include "platypus/platypus.h"
-#include "platypus/base/neon.h"
 #include "platypus/base/macros.h"
 #include "math.h"
 
-Plt_Matrix4x4f plt_matrix_identity() {
+#include "platypus/base/simd.h"
+
+inline Plt_Matrix4x4f plt_matrix_identity() {
 	return (Plt_Matrix4x4f) {{
 		{ 1, 0, 0, 0 },
 		{ 0, 1, 0, 0 },
@@ -12,23 +13,31 @@ Plt_Matrix4x4f plt_matrix_identity() {
 	}};
 }
 
-Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f left, Plt_Matrix4x4f right) {
-	Plt_Matrix4x4f result = {};
+inline Plt_Matrix4x4f plt_matrix_zero() {
+	return (Plt_Matrix4x4f) {{
+		{ 0, 0, 0, 0 },
+		{ 0, 0, 0, 0 },
+		{ 0, 0, 0, 0 },
+		{ 0, 0, 0, 0 }
+	}};
+}
 
-	const float32x4_t zero = {};
+Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f left, Plt_Matrix4x4f right) {
+	Plt_Matrix4x4f result = plt_matrix_zero();
+
+	const simd_float4 zero = simd_float4_create_scalar(0.0f);
 
 	for (unsigned int y = 0; y < 4; ++y) {
-		float row[4] = {
+		simd_float4 ra = {
 			left.columns[0][y],
 			left.columns[1][y],
 			left.columns[2][y],
 			left.columns[3][y]
 		};
-		float32x4_t ra = vld1q_f32(row);
 
 		for (unsigned int x = 0; x < 4; ++x) {
-			float32x4_t cb = vld1q_f32(right.columns[x]);
-			float32_t dot = vaddvq_f32(vmlaq_f32(zero, ra, cb));
+			simd_float4 cb = simd_float4_load(right.columns[x]);
+			float dot = simd_float4_add_across(simd_float4_multiply_add(zero, ra, cb));
 			result.columns[x][y] = dot;
 		}
 	}
@@ -93,16 +102,16 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 }
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
-	float32x4_t va = {v.x, v.y, v.z, v.w};
+	simd_float4 va = simd_float4_create(v.x, v.y, v.z, v.w);
 	
 	// TODO: Optimise this
-	float32x4_t result = {};
-	result = vmlaq_f32(result, vld1q_f32(m.columns[0]), (float32x4_t){v.x,v.x,v.x,v.x});
-	result = vmlaq_f32(result, vld1q_f32(m.columns[1]), (float32x4_t){v.y,v.y,v.y,v.y});
-	result = vmlaq_f32(result, vld1q_f32(m.columns[2]), (float32x4_t){v.z,v.z,v.z,v.z});
-	result = vmlaq_f32(result, vld1q_f32(m.columns[3]), (float32x4_t){v.w,v.w,v.w,v.w});
+	simd_float4 result = simd_float4_create_scalar(0.0f);
+	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[0]), simd_float4_create_scalar(v.x));
+	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[1]), simd_float4_create_scalar(v.y));
+	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[2]), simd_float4_create_scalar(v.z));
+	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[3]), simd_float4_create_scalar(v.w));
 
-	return (Plt_Vector4f){result[0], result[1], result[2], result[3]};
+	return (Plt_Vector4f){result.x, result.y, result.z, result.w};
 }
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b) {

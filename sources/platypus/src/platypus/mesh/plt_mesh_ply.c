@@ -194,7 +194,22 @@ void _ply_next_values(FILE *f, void *values, bool are_integer) {
 
 Plt_Mesh *plt_mesh_load_ply(const char *path) {
 	Plt_Mesh_Ply_Token token;
-	Plt_Mesh_Ply_Layout layout = {};
+	Plt_Mesh_Ply_Layout layout = {
+		.vertex_count = 0,
+		.vertex_attrib_position_x = 0,
+		.vertex_attrib_position_y = 0,
+		.vertex_attrib_position_z = 0,
+		.vertex_attrib_normal_x = 0,
+		.vertex_attrib_normal_y = 0,
+		.vertex_attrib_normal_z = 0,
+		.vertex_attrib_uv_x = 0,
+		.vertex_attrib_uv_y = 0,	
+		.vertex_attrib_count = 0,
+		.face_count = 0,
+		.face_attrib_vertex_index = 0,
+		.face_attrib_count = 0
+	};
+
 	FILE *f = fopen(path, "r");
 	
 	if(!f) {

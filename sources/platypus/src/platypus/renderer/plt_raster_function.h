@@ -32,7 +32,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		Plt_Vector4f wpos[3];
 		Plt_Vector2f uvs[3];
 		Plt_Vector3f normals[3];
-		Plt_Vector3f face_normal = {};
+		Plt_Vector3f face_normal = {0, 0, 0};
 		
 		#if RASTER_LIGHTING_MODEL == 1
 		Plt_Color8 lighting[3];
@@ -124,7 +124,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					depth_buffer[framebuffer_pixel_index] = depth;
 					
 					#if RASTER_LIGHTING_MODEL == 1
-					Plt_Color8 pixel_lighting = {};
+					Plt_Color8 pixel_lighting = {0, 0, 0, 0};
 					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[0], weights.x));
 					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[1], weights.y));
 					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[2], weights.z));
@@ -132,7 +132,7 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					Plt_Color8 tex_color;
 					#if RASTER_TEXTURED
-						Plt_Vector2f uv = {};
+						Plt_Vector2f uv = {0, 0};
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[0], weights.x));
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[1], weights.y));
 						uv = plt_vector2f_add(uv, plt_vector2f_multiply_scalar(uvs[2], weights.z));

@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include "platypus/application/plt_application.h"
 #include "platypus/base/macros.h"
-#include "platypus/base/neon.h"
 
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p);
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color);
