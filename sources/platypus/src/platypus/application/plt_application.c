@@ -5,7 +5,15 @@
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/renderer/plt_renderer.h"
 
+#include "platypus/base/platform.h"
 #include "platypus/base/macros.h"
+
+#if PLT_PLATFORM_WINDOWS
+#include <time.h>
+#else
+#include <unistd.h>
+#include <sys/time.h>
+#endif
 
 typedef struct Plt_Application {
 	SDL_Window *window;
@@ -18,10 +26,13 @@ typedef struct Plt_Application {
 	bool should_quit;
 	unsigned int target_frame_ms;
 
+	float millis_at_creation;
+
 	unsigned int scale;
 	Plt_Color8 clear_color;
 } Plt_Application;
 
+float plt_application_current_milliseconds();
 void plt_application_render(Plt_Application *application);
 void plt_application_update_framebuffer(Plt_Application *application);
 
@@ -40,6 +51,8 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 
 	application->should_quit = false;
 	application->renderer = plt_renderer_create(application, application->framebuffer);
+
+	application->millis_at_creation = plt_application_current_milliseconds();
 
 	application->framebuffer_surface = NULL;
 	plt_application_update_framebuffer(application);
@@ -115,9 +128,25 @@ Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 	return application->renderer;
 }
 
+float plt_application_current_milliseconds() {
+#ifdef PLT_PLATFORM_WINDOWS
+	clock_t c = clock();
+	float elapsed = ((float)c) / CLOCKS_PER_SEC * 1000.0f;
+	return elapsed;
+#else
+	struct timespec curTime;
+	clock_gettime(_CLOCK_REALTIME, &curTime);
+	return curTime.tv_nsec / 1000000.0f;
+#endif
+}
+
+float plt_application_get_milliseconds_since_creation(Plt_Application *application) {
+	return plt_application_current_milliseconds() - application->millis_at_creation;
+}
+
 void plt_application_present(Plt_Application *application) {
 	if (application->scale != 1) {
-		SDL_SoftStretch(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
+		SDL_BlitScaled(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
 	}
 
 	SDL_UpdateWindowSurface(application->window);

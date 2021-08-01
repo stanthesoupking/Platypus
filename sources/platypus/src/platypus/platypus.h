@@ -9,7 +9,7 @@
 #define plt_max(X, Y) (((X) > (Y)) ? (X) : (Y))
 #define plt_clamp(V, MIN, MAX) (plt_min(plt_max(V, MIN), MAX))
 
-#define PLT_PI 3.1415926535897932384626
+#define PLT_PI 3.1415926535897932384626f
 
 typedef struct Plt_Vector2i {
 	int x, y;
@@ -139,6 +139,8 @@ bool plt_application_should_close(Plt_Application *application);
 void plt_application_update(Plt_Application *application);
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application);
+
+float plt_application_get_milliseconds_since_creation(Plt_Application *application);
 
 // MARK: Mesh
 

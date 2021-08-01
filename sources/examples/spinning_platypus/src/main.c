@@ -2,15 +2,6 @@
 
 #include "platypus/platypus.h"
 
-#include <unistd.h>
-#include <sys/time.h>
-
-float millis(void) {
-	struct timespec curTime;
-	clock_gettime(_CLOCK_REALTIME, &curTime);
-	return curTime.tv_nsec / 1000000.0f;
-}
-
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
@@ -30,26 +21,26 @@ int main(int argc, char **argv) {
 	float average_frame_time = 0.0f;
 	unsigned int total_frames = 0;
 
-	float prev_frame = millis();
+	float prev_frame = plt_application_get_milliseconds_since_creation(app);
 
 	while (!plt_application_should_close(app)) {
-		float new_frame_time = millis();
+		float new_frame_time = plt_application_get_milliseconds_since_creation(app);
 		float delta_time = plt_max(new_frame_time - prev_frame, 0);
 		prev_frame = new_frame_time;
 		r += 0.001f * delta_time;
 		
 		plt_application_update(app);
 
-		float start = millis();
+		float start = plt_application_get_milliseconds_since_creation(app);
 		
 		// Render
 		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0.1f,-15.0f});
-		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){PLT_PI,r - 3.0,0});
-		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.7, 0.7, 0.7});
+		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){PLT_PI,r - 3.0f,0});
+		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.7f, 0.7f, 0.7f});
 		Plt_Matrix4x4f model = plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
 		
 		Plt_Matrix4x4f camera_translate = plt_matrix_translate_make((Plt_Vector3f){0,5.5f,-10});
-		Plt_Matrix4x4f camera_rotate = plt_matrix_rotate_make((Plt_Vector3f){-0.4,0,0});
+		Plt_Matrix4x4f camera_rotate = plt_matrix_rotate_make((Plt_Vector3f){-0.4f,0,0});
 		plt_renderer_set_view_matrix(renderer, plt_matrix_multiply(camera_translate, camera_rotate));
 
 		Plt_Vector2i size = plt_renderer_get_framebuffer_size(renderer);
@@ -65,7 +56,7 @@ int main(int argc, char **argv) {
 		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
 		plt_renderer_draw_mesh(renderer, platypus_mesh);
 
-		float frame_time = plt_max(millis() - start, 0);
+		float frame_time = plt_max(plt_application_get_milliseconds_since_creation(app) - start, 0);
 		frame_time_accumulator += frame_time;
 		++total_frames;
 

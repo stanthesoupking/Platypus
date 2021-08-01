@@ -26,9 +26,6 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 		Plt_Vector4f pos[3];
 		
 		Plt_Vector2i spos[3];
-		int32x4_t spos_x[3];
-		int32x4_t spos_y[3];
-		
 		Plt_Vector4f wpos[3];
 		Plt_Vector2f uvs[3];
 		Plt_Vector3f normals[3];
@@ -66,20 +63,16 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 			
 			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
 			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
-			
-			Plt_Vector2i spos_v = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f){wpos[j].x, wpos[j].y});
-			spos_x[j] = (int32x4_t){spos_v.x, spos_v.x, spos_v.x, spos_v.x};
-			spos_y[j] = (int32x4_t){spos_v.y, spos_v.y, spos_v.y, spos_v.y};
-			spos[j] = spos_v;
+			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f) { wpos[j].x, wpos[j].y });
 		}
 		
-		Plt_Vector2i bounds_min = {spos_x[0][0], spos_y[0][0]};
-		Plt_Vector2i bounds_max = {spos_x[0][0], spos_y[0][0]};
+		Plt_Vector2i bounds_min = spos[0];
+		Plt_Vector2i bounds_max = spos[0];
 		for (unsigned int j = 1; j < 3; ++j) {
-			bounds_min.x = plt_min(spos_x[j][0], bounds_min.x);
-			bounds_min.y = plt_min(spos_y[j][0], bounds_min.y);
-			bounds_max.x = plt_max(spos_x[j][0], bounds_max.x);
-			bounds_max.y = plt_max(spos_y[j][0], bounds_max.y);
+			bounds_min.x = plt_min(spos[j].x, bounds_min.x);
+			bounds_min.y = plt_min(spos[j].y, bounds_min.y);
+			bounds_max.x = plt_max(spos[j].x, bounds_max.x);
+			bounds_max.y = plt_max(spos[j].y, bounds_max.y);
 		}
 		
 		bounds_min.x = plt_clamp(bounds_min.x, 0, framebuffer_width);

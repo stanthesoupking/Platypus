@@ -1,10 +1,11 @@
 #pragma once
+#include "platform.h"
 
 #ifdef __aarch64__
-#define NEON
+#define NEON 1
 #include <arm_neon.h>
 #else
-#define SSE
+//#define SSE 1
 #endif
 
 typedef struct simd_float4 {
@@ -36,7 +37,13 @@ float simd_float4_add_across(simd_float4 v);
 
 // MARK: Implementation
 
+#ifdef PLT_PLATFORM_WINDOWS
+#define simd_inline __forceinline
+#elif PLT_PLATFORM_MACOS
 #define simd_inline inline __attribute__((always_inline))
+#else
+#define simd_inline inline
+#endif
 
 simd_inline simd_float4 simd_float4_create(float x, float y, float z, float w) {
 	return (simd_float4){x, y, z, w};

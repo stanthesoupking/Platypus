@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include "platypus/base/macros.h"
+#include "platypus/base/platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "platypus/vendor/stb_image.h"
@@ -85,7 +86,7 @@ Plt_Color8 plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos) {
 }
 
 void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value) {
-#ifdef __APPLE__
+#ifdef PLT_PLATFORM_MACOS
 	// Fast path
 	memset_pattern4(texture->data, &value, sizeof(Plt_Color8) * texture->width * texture->height);
 #else

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "platypus/application/plt_application.h"
 #include "platypus/base/macros.h"
+#include "platypus/base/platform.h"
 
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p);
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color);
@@ -67,7 +68,7 @@ void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer fra
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
-#ifdef __APPLE__
+#ifdef PLT_PLATFORM_MACOS
 	memset_pattern4(framebuffer.pixels, &clear_color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);
 #else
 	int total_pixels = framebuffer.width * framebuffer.height;
@@ -78,7 +79,14 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	
 	if (renderer->depth_buffer) {
 		float clear_depth = INFINITY;
+#ifdef PLT_PLATFORM_MACOS
 		memset_pattern4(renderer->depth_buffer, &clear_depth, sizeof(float) * renderer->depth_buffer_width * renderer->depth_buffer_height);
+#else
+		int total_depth_pixels = framebuffer.width * framebuffer.height;
+		for (int i = 0; i < total_depth_pixels; ++i) {
+			renderer->depth_buffer[i] = INFINITY;
+		}
+#endif
 	}
 }
 
