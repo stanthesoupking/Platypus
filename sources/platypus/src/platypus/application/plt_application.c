@@ -2,8 +2,10 @@
 
 #include <stdlib.h>
 #include "SDL.h"
+
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/renderer/plt_renderer.h"
+#include "platypus/world/plt_world.h"
 
 #include "platypus/base/platform.h"
 #include "platypus/base/macros.h"
@@ -22,6 +24,7 @@ typedef struct Plt_Application {
 	Plt_Framebuffer framebuffer;
 
 	Plt_Renderer *renderer;
+	Plt_World *world;
 
 	bool should_quit;
 	unsigned int target_frame_ms;
@@ -50,7 +53,14 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	plt_assert(application->window, "SDL window creation failed.\n");
 
 	application->should_quit = false;
+	application->framebuffer = (Plt_Framebuffer){
+		.pixels = NULL,
+		.width = width,
+		.height = height
+	};
 	application->renderer = plt_renderer_create(application, application->framebuffer);
+
+	application->world = plt_world_create(512);
 
 	application->millis_at_creation = plt_application_current_milliseconds();
 
@@ -62,6 +72,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 
 void plt_application_destroy(Plt_Application **application) {
 	plt_renderer_destroy(&(*application)->renderer);
+	plt_world_destroy(&(*application)->world);
 	SDL_DestroyWindow((*application)->window);
 	free(*application);
 	*application = NULL;
@@ -126,6 +137,10 @@ SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 	return application->renderer;
+}
+
+Plt_World *plt_application_get_world(Plt_Application *application) {
+	return application->world;
 }
 
 float plt_application_current_milliseconds() {

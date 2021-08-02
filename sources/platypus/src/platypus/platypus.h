@@ -39,6 +39,12 @@ typedef struct Plt_Matrix4x4f {
 	float columns[4][4];
 } Plt_Matrix4x4f;
 
+typedef struct Plt_Transform {
+	Plt_Vector3f translation;
+	Plt_Vector3f rotation;
+	Plt_Vector3f scale;
+} Plt_Transform;
+
 // Values defined in row-major format
 Plt_Matrix4x4f plt_matrix_create(float v[4][4]);
 Plt_Matrix4x4f plt_matrix_identity();
@@ -87,6 +93,31 @@ Plt_Color8 plt_color8_make(unsigned char r, unsigned char g, unsigned char b, un
 Plt_Color8 plt_color8_add(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
+
+// MARK: Type-Object System
+
+typedef struct Plt_World Plt_World;
+
+typedef unsigned int Plt_Object_Type_ID;
+typedef struct Plt_Object Plt_Object;
+
+Plt_Object *plt_object_create(Plt_World *world, Plt_Object_Type_ID type, const char *name);
+void plt_object_destroy(Plt_Object **object);
+
+void plt_object_set_name(Plt_Object *object, const char *name);
+const char *plt_object_get_name(Plt_Object *object);
+
+void plt_object_set_type(Plt_Object *object, Plt_Object_Type_ID type);
+Plt_Object_Type_ID plt_object_get_type(Plt_Object *object);
+
+void plt_object_set_translation(Plt_Object *object, Plt_Vector3f translation);
+Plt_Vector3f plt_object_get_translation(Plt_Object *object);
+
+void plt_object_set_rotation(Plt_Object *object, Plt_Vector3f rotation);
+Plt_Vector3f plt_object_get_rotation(Plt_Object *object);
+
+void plt_object_set_scale(Plt_Object *object, Plt_Vector3f scale);
+Plt_Vector3f plt_object_get_scale(Plt_Object *object);
 
 // MARK: Renderer
 
@@ -139,6 +170,7 @@ bool plt_application_should_close(Plt_Application *application);
 void plt_application_update(Plt_Application *application);
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application);
+Plt_World *plt_application_get_world(Plt_Application *application);
 
 float plt_application_get_milliseconds_since_creation(Plt_Application *application);
 
