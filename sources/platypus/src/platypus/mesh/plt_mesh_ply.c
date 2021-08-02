@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
+#include "platypus/base/macros.h"
 
 #define _PLT_MESH_READ_LINE_BUFFER_SIZE 2048
 

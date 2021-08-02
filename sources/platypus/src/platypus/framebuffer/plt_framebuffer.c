@@ -1,6 +1,8 @@
 #include "plt_framebuffer.h"
 #include "platypus/base/platform.h"
 
+#include <string.h>
+
 void plt_framebuffer_clear(Plt_Framebuffer framebuffer, Plt_Color8 color) {
 	#ifdef PLT_PLATFORM_MACOS
 		memset_pattern4(framebuffer.pixels, &color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);

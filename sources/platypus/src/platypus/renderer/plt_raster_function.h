@@ -1,5 +1,6 @@
 #include "plt_renderer.h"
 #include "plt_raster_function_helpers.h"
+#include "platypus/mesh/plt_mesh.h"
 
 #ifndef RASTER_FUNC_NAME
 #error "Must supply RASTER_FUNC_NAME"
