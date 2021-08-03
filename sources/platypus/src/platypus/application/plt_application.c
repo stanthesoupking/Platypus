@@ -60,8 +60,6 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	};
 	application->renderer = plt_renderer_create(application, application->framebuffer);
 
-	application->world = plt_world_create(512);
-
 	application->millis_at_creation = plt_application_current_milliseconds();
 
 	application->framebuffer_surface = NULL;
@@ -72,7 +70,6 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 
 void plt_application_destroy(Plt_Application **application) {
 	plt_renderer_destroy(&(*application)->renderer);
-	plt_world_destroy(&(*application)->world);
 	SDL_DestroyWindow((*application)->window);
 	free(*application);
 	*application = NULL;
@@ -83,8 +80,6 @@ bool plt_application_should_close(Plt_Application *application) {
 }
 
 void plt_application_update(Plt_Application *application) {
-	// unsigned int frame_start = SDL_GetTicks();
-
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
@@ -94,10 +89,13 @@ void plt_application_update(Plt_Application *application) {
 
 	plt_application_update_framebuffer(application);
 
-	// int wait_time = plt_max(application->target_frame_ms - (SDL_GetTicks() - frame_start), 0);
-	// if (wait_time > 0) {
-	// 	SDL_Delay(wait_time);
-	// }
+	if (application->world) {
+		plt_world_update(application->world);
+
+		plt_renderer_clear(application->renderer, plt_color8_make(35,45,30,255));
+		plt_world_render(application->world, application->renderer);
+		plt_renderer_present(application->renderer);
+	}
 }
 
 void plt_application_update_framebuffer(Plt_Application *application) {
@@ -137,6 +135,10 @@ SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 	return application->renderer;
+}
+
+void plt_application_set_world(Plt_Application *application, Plt_World *world) {
+	application->world = world;
 }
 
 Plt_World *plt_application_get_world(Plt_Application *application) {

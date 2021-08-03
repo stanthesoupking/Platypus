@@ -2,14 +2,61 @@
 
 #include "platypus/platypus.h"
 
+typedef struct Plt_Mesh_Type_Data {
+	Plt_Mesh *mesh;
+	Plt_Texture *texture;
+} Plt_Mesh_Type_Data;
+
+void _mesh_type_render(Plt_Object *object, Plt_Renderer *renderer) {
+	Plt_Mesh_Type_Data *mesh_type_data = (Plt_Mesh_Type_Data *)object->type_data;
+	
+	if (!mesh_type_data->mesh) {
+		return;
+	}
+	
+	plt_renderer_set_model_matrix(renderer, plt_transform_to_matrix(object->transform));
+	plt_renderer_bind_texture(renderer, mesh_type_data->texture);
+	plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
+	plt_renderer_draw_mesh(renderer, mesh_type_data->mesh);
+}
+
+typedef enum Plt_Object_Type {
+	Plt_Object_Type_None = 0,
+	Plt_Object_Type_Mesh = 1
+} Plt_Object_Type;
+
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
+	Plt_Object_Type_Descriptor type_descriptors[] = {
+		{
+			.id = Plt_Object_Type_Mesh,
+			.data_size = sizeof(Plt_Mesh_Type_Data),
+			.update = NULL,
+			.render = _mesh_type_render
+		}
+	};
+	
+	Plt_World *world = plt_world_create(128, type_descriptors, 1);
+	plt_application_set_world(app, world);
+
+//	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
+//	Plt_Texture *platypus_texture = plt_texture_load("../sources/examples/spinning_platypus/assets/platypus.png");
 	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/platypus.ply");
 	Plt_Texture *platypus_texture = plt_texture_load("assets/platypus.png");
-	
-	plt_renderer_bind_texture(renderer, platypus_texture);
+
+	Plt_Object *platypus_object = plt_world_create_object(world, Plt_Object_Type_Mesh, "Platypus");
+	Plt_Mesh_Type_Data *mesh_type_data = (Plt_Mesh_Type_Data *)platypus_object->type_data;
+	mesh_type_data->mesh = platypus_mesh;
+	mesh_type_data->texture = platypus_texture;
+
+	Plt_Object *terrain_object = plt_world_create_object(world, 0, "Terrain");
+	Plt_Object *test1_object = plt_world_create_object(world, 0, "Test Object 1");
+	Plt_Object *test2_object = plt_world_create_object(world, 0, "Test Object 2");
+	Plt_Object *test3_object = plt_world_create_object(world, 0, "Test Object 3");
+	Plt_Object *test4_object = plt_world_create_object(world, 0, "Test Object 4");
+
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));
 	plt_renderer_set_directional_lighting_color(renderer, plt_color8_make(255, 200, 200, 255));
@@ -29,15 +76,12 @@ int main(int argc, char **argv) {
 		prev_frame = new_frame_time;
 		r += 0.001f * delta_time;
 		
-		plt_application_update(app);
-
 		float start = plt_application_get_milliseconds_since_creation(app);
 		
 		// Render
-		Plt_Matrix4x4f translate = plt_matrix_translate_make((Plt_Vector3f){0,0.1f,-15.0f});
-		Plt_Matrix4x4f rotate = plt_matrix_rotate_make((Plt_Vector3f){PLT_PI,r - 3.0f,0});
-		Plt_Matrix4x4f scale = plt_matrix_scale_make((Plt_Vector3f){0.7f, 0.7f, 0.7f});
-		Plt_Matrix4x4f model = plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
+		platypus_object->transform.translation = (Plt_Vector3f){0,0.1f,-15.0f};
+		platypus_object->transform.rotation = (Plt_Vector3f){PLT_PI,r - 3.0f,0};
+		platypus_object->transform.scale = (Plt_Vector3f){0.7f, 0.7f, 0.7f};
 		
 		Plt_Matrix4x4f camera_translate = plt_matrix_translate_make((Plt_Vector3f){0,5.5f,-10});
 		Plt_Matrix4x4f camera_rotate = plt_matrix_rotate_make((Plt_Vector3f){-0.4f,0,0});
@@ -48,13 +92,7 @@ int main(int argc, char **argv) {
 		Plt_Matrix4x4f projection = plt_matrix_perspective_make(aspect_ratio, plt_math_deg2rad(70.0f), 0.1f, 200.0f);
 		plt_renderer_set_projection_matrix(renderer, projection);
 
-		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
-		plt_renderer_set_point_size(renderer, 8);
-		
-		plt_renderer_clear(renderer, plt_color8_make(35,45,30,255));
-		plt_renderer_set_model_matrix(renderer, model);
-		plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
-		plt_renderer_draw_mesh(renderer, platypus_mesh);
+		plt_application_update(app);
 
 		float frame_time = plt_max(plt_application_get_milliseconds_since_creation(app) - start, 0);
 		frame_time_accumulator += frame_time;
@@ -66,13 +104,12 @@ int main(int argc, char **argv) {
 			total_frames = 0;
 			printf("Render time: %.2fms\n", average_frame_time);
 		}
-
-		plt_renderer_present(renderer);
 	}
 
 	plt_mesh_destroy(&platypus_mesh);
 	plt_texture_destroy(&platypus_texture);
 	plt_application_destroy(&app);
+	plt_world_destroy(&world);
 
 	return 0;
 }

@@ -57,6 +57,8 @@ Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate);
 
 Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z);
 
+Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform);
+
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
@@ -98,26 +100,32 @@ Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
 
 typedef struct Plt_World Plt_World;
 
-typedef unsigned int Plt_Object_Type_ID;
 typedef struct Plt_Object Plt_Object;
+typedef unsigned int Plt_Object_Type_ID;
+typedef struct Plt_Object {
+	Plt_Object_Type_ID type;
 
-Plt_Object *plt_object_create(Plt_World *world, Plt_Object_Type_ID type, const char *name);
-void plt_object_destroy(Plt_Object **object);
+	const char *name;
+	Plt_Transform transform;
+	Plt_Object *parent;
 
-void plt_object_set_name(Plt_Object *object, const char *name);
-const char *plt_object_get_name(Plt_Object *object);
+	char type_data[];
+} Plt_Object;
 
-void plt_object_set_type(Plt_Object *object, Plt_Object_Type_ID type);
-Plt_Object_Type_ID plt_object_get_type(Plt_Object *object);
+typedef struct Plt_Renderer Plt_Renderer;
+typedef struct Plt_Object_Type_Descriptor {
+	Plt_Object_Type_ID id;
+	unsigned int data_size;
 
-void plt_object_set_translation(Plt_Object *object, Plt_Vector3f translation);
-Plt_Vector3f plt_object_get_translation(Plt_Object *object);
+	void (*update)(Plt_Object *object);
+	void (*render)(Plt_Object *object, Plt_Renderer *renderer);
+} Plt_Object_Type_Descriptor;
 
-void plt_object_set_rotation(Plt_Object *object, Plt_Vector3f rotation);
-Plt_Vector3f plt_object_get_rotation(Plt_Object *object);
+Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
+void plt_world_destroy(Plt_World **world);
 
-void plt_object_set_scale(Plt_Object *object, Plt_Vector3f scale);
-Plt_Vector3f plt_object_get_scale(Plt_Object *object);
+Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, const char *name);
+void plt_world_destroy_object(Plt_World *world, Plt_Object **object);
 
 // MARK: Renderer
 
@@ -170,6 +178,8 @@ bool plt_application_should_close(Plt_Application *application);
 void plt_application_update(Plt_Application *application);
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application);
+
+void plt_application_set_world(Plt_Application *application, Plt_World *world);
 Plt_World *plt_application_get_world(Plt_Application *application);
 
 float plt_application_get_milliseconds_since_creation(Plt_Application *application);
