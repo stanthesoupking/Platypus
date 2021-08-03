@@ -121,11 +121,25 @@ typedef struct Plt_Object_Type_Descriptor {
 	void (*render)(Plt_Object *object, Plt_Renderer *renderer);
 } Plt_Object_Type_Descriptor;
 
-Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
+Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types);
 void plt_world_destroy(Plt_World **world);
 
 Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, const char *name);
 void plt_world_destroy_object(Plt_World *world, Plt_Object **object);
+
+// MARK: Base Object Types
+
+#define PLT_BASE_TYPE_ID_OFFSET 512
+const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
+const static Plt_Object_Type_ID Plt_Object_Type_Mesh = PLT_BASE_TYPE_ID_OFFSET + 1;
+
+typedef struct Plt_Mesh Plt_Mesh;
+typedef struct Plt_Texture Plt_Texture;
+typedef struct Plt_Object_Type_Mesh_Data {
+	Plt_Mesh *mesh;
+	Plt_Texture *texture;
+	Plt_Color8 color;
+} Plt_Object_Type_Mesh_Data;
 
 // MARK: Renderer
 

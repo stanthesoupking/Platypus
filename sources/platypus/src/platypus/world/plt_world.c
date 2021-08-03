@@ -2,10 +2,11 @@
 
 #include <stdlib.h>
 #include "platypus/base/macros.h"
+#include "plt_base_types.h"
 
 void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor descriptor);
 
-Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count) {
+Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types) {
 	plt_assert(object_storage_capacity > 0, "Object storage capacity must be at least 1");
 
 	Plt_World *world = malloc(sizeof(Plt_World));
@@ -22,8 +23,11 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 		world->registered_object_types[i].descriptor.update = NULL;
 		world->registered_object_types[i].descriptor.render = NULL;
 	}
-	for (int i = 0; i < type_descriptor_count; ++i) {
-		plt_world_register_object_type(world, type_descriptors[i]);
+
+	if (include_base_types) {
+		for (int i = 0; i < base_type_descriptor_count; ++i) {
+			plt_world_register_object_type(world, base_type_descriptors[i]);
+		}
 	}
 
 	world->object_storage = malloc(world->object_size * object_storage_capacity);

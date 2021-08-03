@@ -2,43 +2,13 @@
 
 #include "platypus/platypus.h"
 
-typedef struct Plt_Mesh_Type_Data {
-	Plt_Mesh *mesh;
-	Plt_Texture *texture;
-} Plt_Mesh_Type_Data;
-
-void _mesh_type_render(Plt_Object *object, Plt_Renderer *renderer) {
-	Plt_Mesh_Type_Data *mesh_type_data = (Plt_Mesh_Type_Data *)object->type_data;
-	
-	if (!mesh_type_data->mesh) {
-		return;
-	}
-	
-	plt_renderer_set_model_matrix(renderer, plt_transform_to_matrix(object->transform));
-	plt_renderer_bind_texture(renderer, mesh_type_data->texture);
-	plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
-	plt_renderer_draw_mesh(renderer, mesh_type_data->mesh);
-}
-
-typedef enum Plt_Object_Type {
-	Plt_Object_Type_None = 0,
-	Plt_Object_Type_Mesh = 1
-} Plt_Object_Type;
-
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	Plt_Object_Type_Descriptor type_descriptors[] = {
-		{
-			.id = Plt_Object_Type_Mesh,
-			.data_size = sizeof(Plt_Mesh_Type_Data),
-			.update = NULL,
-			.render = _mesh_type_render
-		}
-	};
+	Plt_Object_Type_Descriptor type_descriptors[] = {};
 	
-	Plt_World *world = plt_world_create(128, type_descriptors, 1);
+	Plt_World *world = plt_world_create(128, type_descriptors, 0, true);
 	plt_application_set_world(app, world);
 
 //	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
@@ -47,15 +17,15 @@ int main(int argc, char **argv) {
 	Plt_Texture *platypus_texture = plt_texture_load("assets/platypus.png");
 
 	Plt_Object *platypus_object = plt_world_create_object(world, Plt_Object_Type_Mesh, "Platypus");
-	Plt_Mesh_Type_Data *mesh_type_data = (Plt_Mesh_Type_Data *)platypus_object->type_data;
+	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)platypus_object->type_data;
 	mesh_type_data->mesh = platypus_mesh;
 	mesh_type_data->texture = platypus_texture;
 
-	Plt_Object *terrain_object = plt_world_create_object(world, 0, "Terrain");
-	Plt_Object *test1_object = plt_world_create_object(world, 0, "Test Object 1");
-	Plt_Object *test2_object = plt_world_create_object(world, 0, "Test Object 2");
-	Plt_Object *test3_object = plt_world_create_object(world, 0, "Test Object 3");
-	Plt_Object *test4_object = plt_world_create_object(world, 0, "Test Object 4");
+	Plt_Object *terrain_object = plt_world_create_object(world, Plt_Object_Type_None, "Terrain");
+	Plt_Object *test1_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 1");
+	Plt_Object *test2_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 2");
+	Plt_Object *test3_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 3");
+	Plt_Object *test4_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 4");
 
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));
