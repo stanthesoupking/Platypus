@@ -103,6 +103,7 @@ typedef struct Plt_World Plt_World;
 typedef struct Plt_Object Plt_Object;
 typedef unsigned int Plt_Object_Type_ID;
 typedef struct Plt_Object {
+	Plt_World *world;
 	Plt_Object_Type_ID type;
 
 	const char *name;
@@ -126,6 +127,8 @@ void plt_world_destroy(Plt_World **world);
 
 Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, const char *name);
 void plt_world_destroy_object(Plt_World *world, Plt_Object **object);
+
+Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object); 
 
 // MARK: Base Object Types
 
@@ -153,7 +156,6 @@ typedef enum Plt_Lighting_Model {
 	Plt_Lighting_Model_Unlit = 0,
 	Plt_Lighting_Model_Vertex_Lit = 1,
 } Plt_Lighting_Model;
-
 
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Mesh Plt_Mesh;

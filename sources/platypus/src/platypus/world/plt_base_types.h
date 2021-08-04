@@ -22,7 +22,7 @@ void _mesh_type_render(Plt_Object *object, Plt_Renderer *renderer) {
 		return;
 	}
 	
-	plt_renderer_set_model_matrix(renderer, plt_transform_to_matrix(object->transform));
+	plt_renderer_set_model_matrix(renderer, plt_object_get_model_matrix(object));
 	plt_renderer_bind_texture(renderer, mesh_type_data->texture);
 	plt_renderer_set_render_color(renderer, mesh_type_data->color);
 	plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);

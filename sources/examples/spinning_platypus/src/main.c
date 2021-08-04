@@ -16,8 +16,11 @@ int main(int argc, char **argv) {
 	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/platypus.ply");
 	Plt_Texture *platypus_texture = plt_texture_load("assets/platypus.png");
 
-	Plt_Object *platypus_object = plt_world_create_object(world, Plt_Object_Type_Mesh, "Platypus");
-	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)platypus_object->type_data;
+	Plt_Object *platypus_object = plt_world_create_object(world, Plt_Object_Type_None, "Platypus");
+
+	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, Plt_Object_Type_Mesh, "Mesh");
+	platypus_mesh_renderer->parent = platypus_object;
+	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)platypus_mesh_renderer->type_data;
 	mesh_type_data->mesh = platypus_mesh;
 	mesh_type_data->texture = platypus_texture;
 

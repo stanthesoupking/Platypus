@@ -31,17 +31,17 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 	}
 
 	world->object_storage = malloc(world->object_size * object_storage_capacity);
-	world->object_storage_is_set = malloc(sizeof(bool) * object_storage_capacity);
+	world->object_storage_private_data = malloc(sizeof(Plt_Object_Private_Data) * object_storage_capacity);
 
 	for (int i = 0; i < object_storage_capacity; ++i) {
-		world->object_storage_is_set[i] = false;
+		world->object_storage_private_data[i].is_set = false;
 	}
 
 	return world;
 }
 
 void plt_world_destroy(Plt_World **world) {
-	free((*world)->object_storage_is_set);
+	free((*world)->object_storage_private_data);
 	free((*world)->object_storage);
 	free(*world);
 	*world = NULL;
@@ -60,13 +60,14 @@ Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, c
 
 	unsigned int object_index;
 	for (int i = 0; i < world->object_storage_capacity; ++i) {
-		if (!world->object_storage_is_set[i]) {
+		if (!world->object_storage_private_data[i].is_set) {
 			object_index = i;
 			break;
 		}
 	}
 
 	Plt_Object *object = plt_world_get_object_at_index(world, object_index);
+	object->world = world;
 	object->type = type;
 	object->name = name;
 	object->parent = NULL;
@@ -75,7 +76,7 @@ Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, c
 		.rotation = (Plt_Vector3f){0.0f, 0.0f, 0.0f},
 		.scale = (Plt_Vector3f){1.0f, 1.0f, 1.0f},
 	};
-	world->object_storage_is_set[object_index] = true;
+	world->object_storage_private_data[object_index].is_set = true;
 	world->object_count++;
 
 	return object;
@@ -85,8 +86,8 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object) {
 	unsigned int object_index = plt_world_get_object_index(world, *object);
 	plt_assert(object_index < world->object_storage_capacity, "Object is outside of world's object capacity\n");
 	
-	if (world->object_storage_is_set[object_index]) {
-		world->object_storage_is_set[object_index] = false;
+	if (world->object_storage_private_data[object_index].is_set) {
+		world->object_storage_private_data[object_index].is_set = false;
 		world->object_count--;
 	}
 
@@ -105,9 +106,46 @@ void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor
 	};
 }
 
+Plt_Matrix4x4f plt_world_update_object_matrix_recursive(Plt_World *world, Plt_Object *object) {
+	if (object == NULL) {
+		return plt_matrix_identity();
+	}
+
+	unsigned int object_index = plt_world_get_object_index(world, object);
+	Plt_Object_Private_Data *private_data = &world->object_storage_private_data[object_index];
+	if (private_data->valid_matrices) {
+		return plt_matrix_multiply(private_data->parent_matrix, plt_transform_to_matrix(object->transform));
+	} else {
+		private_data->parent_matrix = plt_world_update_object_matrix_recursive(world, object->parent);
+		private_data->valid_matrices = true;
+		return plt_matrix_multiply(private_data->parent_matrix, plt_transform_to_matrix(object->transform));
+	}
+}
+
+void plt_world_update_object_matrices(Plt_World *world) {
+	// Invalidate all matrices
+	for (unsigned int i = 0; i < world->object_storage_capacity; ++i) {
+		world->object_storage_private_data[i].valid_matrices = false;
+	}
+
+	// Update matrices
+	for (unsigned int i = 0; i < world->object_storage_capacity; ++i) {
+		if (!world->object_storage_private_data[i].is_set) {
+			continue;
+		}
+
+		if (!world->object_storage_private_data[i].valid_matrices) {
+			Plt_Object *object = plt_world_get_object_at_index(world, i);
+			plt_world_update_object_matrix_recursive(world, object);
+		}
+	}
+}
+
 void plt_world_update(Plt_World *world) {
-	for(unsigned int i = 0; i < world->object_storage_capacity; ++i) {
-		if (!world->object_storage_is_set[i]) {
+	plt_world_update_object_matrices(world);
+
+	for (unsigned int i = 0; i < world->object_storage_capacity; ++i) {
+		if (!world->object_storage_private_data[i].is_set) {
 			continue;
 		}
 
@@ -120,8 +158,10 @@ void plt_world_update(Plt_World *world) {
 }
 
 void plt_world_render(Plt_World *world, Plt_Renderer *renderer) {
-	for(unsigned int i = 0; i < world->object_storage_capacity; ++i) {
-		if (!world->object_storage_is_set[i]) {
+	plt_world_update_object_matrices(world);
+
+	for (unsigned int i = 0; i < world->object_storage_capacity; ++i) {
+		if (!world->object_storage_private_data[i].is_set) {
 			continue;
 		}
 
@@ -131,4 +171,9 @@ void plt_world_render(Plt_World *world, Plt_Renderer *renderer) {
 			render_func(object, renderer);
 		}
 	}
+}
+
+Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object) {
+	unsigned int object_index = plt_world_get_object_index(world, object);
+	return world->object_storage_private_data[object_index].parent_matrix;
 }
