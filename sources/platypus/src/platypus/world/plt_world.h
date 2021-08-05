@@ -4,12 +4,18 @@
 #include "platypus/base/plt_linked_list.h"
 #include "plt_object.h"
 
-typedef struct Plt_Registered_Object_Type {
-	bool is_set;
-	Plt_Object_Type_Descriptor descriptor;
-} Plt_Registered_Object_Type;
+typedef struct Plt_Registered_Object_Type_Entry {
+	Plt_Object *object;
+	char data[];
+} Plt_Registered_Object_Type_Entry;
 
-#define PLT_WORLD_MAX_OBJECT_TYPES 2048
+typedef struct Plt_Registered_Object_Type {
+	Plt_Object_Type_ID id;
+	Plt_Object_Type_Descriptor descriptor;
+	unsigned int object_entry_stride;
+	unsigned int object_entry_count;
+	char *object_entries;
+} Plt_Registered_Object_Type;
 
 typedef struct Plt_Object_Private_Data {
 	bool is_set;
@@ -19,16 +25,15 @@ typedef struct Plt_Object_Private_Data {
 } Plt_Object_Private_Data;
 
 typedef struct Plt_World {
-	Plt_Linked_List object_ref_list;
+	Plt_Linked_List object_list;
 
 	unsigned int object_count;
-	char *object_storage;
+	Plt_Object *object_storage;
 	Plt_Object_Private_Data *object_storage_private_data;
 	unsigned int object_storage_capacity;
 
-	unsigned int object_size;
-	unsigned int inclusive_object_type_data_size;
-	Plt_Registered_Object_Type registered_object_types[PLT_WORLD_MAX_OBJECT_TYPES];
+	unsigned int type_count;
+	Plt_Registered_Object_Type *types;
 } Plt_World;
 
 void plt_world_update(Plt_World *world);

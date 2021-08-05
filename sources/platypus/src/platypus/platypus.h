@@ -110,7 +110,7 @@ typedef struct Plt_Object {
 	Plt_Transform transform;
 	Plt_Object *parent;
 
-	char type_data[];
+	void *type_data;
 } Plt_Object;
 
 typedef struct Plt_Renderer Plt_Renderer;
@@ -118,8 +118,8 @@ typedef struct Plt_Object_Type_Descriptor {
 	Plt_Object_Type_ID id;
 	unsigned int data_size;
 
-	void (*update)(Plt_Object *object);
-	void (*render)(Plt_Object *object, Plt_Renderer *renderer);
+	void (*update)(Plt_Object *object, void *type_data);
+	void (*render)(Plt_Object *object, void *type_data, Plt_Renderer *renderer);
 } Plt_Object_Type_Descriptor;
 
 Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types);
@@ -135,6 +135,7 @@ Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object);
 #define PLT_BASE_TYPE_ID_OFFSET 512
 const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
 const static Plt_Object_Type_ID Plt_Object_Type_Mesh = PLT_BASE_TYPE_ID_OFFSET + 1;
+const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 2;
 
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;

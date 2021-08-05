@@ -3,7 +3,7 @@
 #include "platypus/platypus.h"
 #include <stdlib.h>
 
-void _mesh_type_render(Plt_Object *object, Plt_Renderer *renderer);
+void _mesh_type_render(Plt_Object *object, void *data, Plt_Renderer *renderer);
 
 const static unsigned int base_type_descriptor_count = 1;
 const static Plt_Object_Type_Descriptor base_type_descriptors[] = {
@@ -15,8 +15,8 @@ const static Plt_Object_Type_Descriptor base_type_descriptors[] = {
 	}
 };
 
-void _mesh_type_render(Plt_Object *object, Plt_Renderer *renderer) {
-	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)object->type_data;
+void _mesh_type_render(Plt_Object *object, void *type_data, Plt_Renderer *renderer) {
+	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)type_data;
 	
 	if (!mesh_type_data->mesh) {
 		return;
