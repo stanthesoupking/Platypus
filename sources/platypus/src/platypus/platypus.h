@@ -108,7 +108,6 @@ typedef struct Plt_Object {
 
 	const char *name;
 	Plt_Transform transform;
-	Plt_Object *parent;
 
 	void *type_data;
 } Plt_Object;
@@ -125,9 +124,10 @@ typedef struct Plt_Object_Type_Descriptor {
 Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types);
 void plt_world_destroy(Plt_World **world);
 
-Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object_Type_ID type, const char *name);
+Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
 void plt_world_destroy_object(Plt_World *world, Plt_Object **object);
 
+Plt_Object *plt_object_get_parent(Plt_Object *object);
 Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object); 
 
 // MARK: Base Object Types

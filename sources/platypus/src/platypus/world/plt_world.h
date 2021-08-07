@@ -22,6 +22,9 @@ typedef struct Plt_Object_Private_Data {
 
 	bool valid_matrices;
 	Plt_Matrix4x4f parent_matrix;
+
+	Plt_Object *parent;
+	Plt_Linked_List children;
 } Plt_Object_Private_Data;
 
 typedef struct Plt_World {
@@ -39,4 +42,6 @@ typedef struct Plt_World {
 void plt_world_update(Plt_World *world);
 void plt_world_render(Plt_World *world, Plt_Renderer *renderer);
 
+Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt_Object *object);
+Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object);
 Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object);
