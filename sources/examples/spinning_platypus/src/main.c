@@ -16,19 +16,18 @@ int main(int argc, char **argv) {
 	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/platypus.ply");
 	Plt_Texture *platypus_texture = plt_texture_load("assets/platypus.png");
 
-	Plt_Object *platypus_object = plt_world_create_object(world, Plt_Object_Type_None, "Platypus");
+	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Platypus");
 
-	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, Plt_Object_Type_Mesh, "Mesh");
-	platypus_mesh_renderer->parent = platypus_object;
+	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, platypus_object, Plt_Object_Type_Mesh, "Mesh");
 	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)platypus_mesh_renderer->type_data;
 	mesh_type_data->mesh = platypus_mesh;
 	mesh_type_data->texture = platypus_texture;
 
-	Plt_Object *terrain_object = plt_world_create_object(world, Plt_Object_Type_None, "Terrain");
-	Plt_Object *test1_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 1");
-	Plt_Object *test2_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 2");
-	Plt_Object *test3_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 3");
-	Plt_Object *test4_object = plt_world_create_object(world, Plt_Object_Type_None, "Test Object 4");
+	Plt_Object *terrain_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Terrain");
+	Plt_Object *test1_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 1");
+	Plt_Object *test2_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 2");
+	Plt_Object *test3_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 3");
+	Plt_Object *test4_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 4");
 
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));
