@@ -12,9 +12,12 @@
 
 #if PLT_PLATFORM_WINDOWS
 #include <time.h>
-#else
+#elif PLT_PLATFORM_MACOS
 #include <unistd.h>
 #include <sys/time.h>
+#elif PLT_PLATFORM_LINUX
+#include <unistd.h>
+#include <time.h>
 #endif
 
 typedef struct Plt_Application {
@@ -146,13 +149,17 @@ Plt_World *plt_application_get_world(Plt_Application *application) {
 }
 
 float plt_application_current_milliseconds() {
-#ifdef PLT_PLATFORM_WINDOWS
+#if PLT_PLATFORM_WINDOWS
 	clock_t c = clock();
 	float elapsed = ((float)c) / CLOCKS_PER_SEC * 1000.0f;
 	return elapsed;
-#else
+#elif PLT_PLATFORM_MACOS 
 	struct timespec curTime;
 	clock_gettime(_CLOCK_REALTIME, &curTime);
+	return curTime.tv_nsec / 1000000.0f;
+#elif PLT_PLATFORM_LINUX
+	struct timespec curTime;
+	clock_gettime(CLOCK_REALTIME, &curTime);
 	return curTime.tv_nsec / 1000000.0f;
 #endif
 }
