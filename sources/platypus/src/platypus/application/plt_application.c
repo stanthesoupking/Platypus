@@ -168,9 +168,40 @@ float plt_application_get_milliseconds_since_creation(Plt_Application *applicati
 	return plt_application_current_milliseconds() - application->millis_at_creation;
 }
 
+// TODO: Create macro-defined versions of this for different scales
+void plt_application_fast_blit(Plt_Application *application) {
+	Plt_Color8 *src_pixels = application->framebuffer.pixels;
+	unsigned int src_width = application->framebuffer.width;
+	unsigned int src_height = application->framebuffer.height;
+	
+	SDL_Surface *dest_surface = SDL_GetWindowSurface(application->window);
+	Plt_Color8 *dest_pixels = dest_surface->pixels;
+	unsigned int dest_width = dest_surface->w;
+	unsigned int dest_height = dest_surface->h;
+	
+	unsigned int scale_factor = dest_width/src_width;
+	
+	for (unsigned int y = 0; y < src_height; ++y) {
+		unsigned int dy = y * scale_factor;
+		
+		// Draw stretched row
+		for (unsigned int x = 0; x < src_width; ++x) {
+			unsigned int dx = x * scale_factor;
+			for (unsigned int i = 0; i < scale_factor; ++i) {
+				dest_pixels[dy * dest_width + dx + i] = src_pixels[y * src_width + x];
+			}
+		}
+		
+		// Repeat it
+		for (unsigned int i = 0; i < scale_factor; ++i) {
+			memcpy(dest_pixels + (dy + i) * dest_width, dest_pixels + dy * dest_width, sizeof(Plt_Color8) * dest_width);
+		}
+	}
+}
+
 void plt_application_present(Plt_Application *application) {
 	if (application->scale != 1) {
-		SDL_BlitScaled(application->framebuffer_surface, NULL, SDL_GetWindowSurface(application->window), NULL);
+		plt_application_fast_blit(application);
 	}
 
 	SDL_UpdateWindowSurface(application->window);
