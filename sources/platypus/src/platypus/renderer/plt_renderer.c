@@ -6,6 +6,7 @@
 #include "platypus/base/platform.h"
 #include "platypus/mesh/plt_mesh.h"
 #include "plt_vertex_processor.h"
+#include "plt_triangle_processor.h"
 
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p);
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color);
@@ -21,6 +22,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->application = application;
 
 	renderer->vertex_processor = plt_vertex_processor_create();
+	renderer->triangle_processor = plt_triangle_processor_create();
 	
 	renderer->model_matrix =
 	renderer->view_matrix =
@@ -49,6 +51,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 
 void plt_renderer_destroy(Plt_Renderer **renderer) {
 	plt_vertex_processor_destroy(&(*renderer)->vertex_processor);
+	plt_triangle_processor_destroy(&(*renderer)->triangle_processor);
 
 	if ((*renderer)->depth_buffer) {
 		free((*renderer)->depth_buffer);
@@ -162,21 +165,26 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	
 	// Process vertices
 	plt_timer_start(vp_timer)
-	Plt_Vertex_Processor_Result result = plt_vertex_processor_process_mesh(renderer->vertex_processor, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
+	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
 	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
+
+	// Process triangles
+	plt_timer_start(tp_timer)
+	Plt_Triangle_Processor_Result tp_result = plt_triangle_processor_process_vertex_data(renderer->triangle_processor, viewport, vp_result);
+	plt_timer_end(vp_timer, "TRIANGLE_PROCESSOR")
 
 	plt_timer_start(rasterize_triangle_timer)
 	if (renderer->bound_texture) {
 		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_textured_unlit(result, renderer, mesh);
+			_draw_triangle_textured_unlit(vp_result, tp_result, renderer, mesh);
 		} else {
-			_draw_triangle_textured_lit(result, renderer, mesh);
+			_draw_triangle_textured_lit(vp_result, tp_result, renderer, mesh);
 		}
 	} else {
 		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_untextured_unlit(result, renderer, mesh);
+			_draw_triangle_untextured_unlit(vp_result, tp_result, renderer, mesh);
 		} else {
-			_draw_triangle_untextured_lit(result, renderer, mesh);
+			_draw_triangle_untextured_lit(vp_result, tp_result, renderer, mesh);
 		}
 	}
 	plt_timer_end(rasterize_triangle_timer, "RASTERIZE_TRIANGLE");

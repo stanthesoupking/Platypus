@@ -2,6 +2,7 @@
 #include "plt_raster_function_helpers.h"
 #include "platypus/mesh/plt_mesh.h"
 #include "platypus/renderer/plt_vertex_processor.h"
+#include "platypus/renderer/plt_triangle_processor.h"
 
 #ifndef RASTER_FUNC_NAME
 #error "Must supply RASTER_FUNC_NAME"
@@ -15,7 +16,7 @@
 #error "Must supply RASTER_LIGHTING_MODEL"
 #endif
 
-void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *renderer, Plt_Mesh *mesh) {
+void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Processor_Result triangle_data, Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	Plt_Color8 *framebuffer_pixels = renderer->framebuffer.pixels;
 	float *depth_buffer = renderer->depth_buffer;
 	int framebuffer_width = renderer->framebuffer.width;
@@ -24,7 +25,9 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *ren
 	
 	Plt_Vector3f normalized_light_direction = plt_vector3f_normalize(renderer->directional_lighting_direction);
 	
-	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
+	for (unsigned int i = 0; i < triangle_data.triangle_count; ++i) {
+		unsigned int v = i * 3;
+
 		Plt_Vector3f pos[3];
 		
 		Plt_Vector2i spos[3];
@@ -38,7 +41,7 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *ren
 		
 		for (unsigned int j = 0; j < 3; ++j) {
 			#if RASTER_LIGHTING_MODEL == 1
-			normals[j] = (Plt_Vector3f){ vertex_data.world_normals_x[i + j], vertex_data.world_normals_y[i + j], vertex_data.world_normals_z[i + j] };
+			normals[j] = (Plt_Vector3f){ vertex_data.world_normals_x[v + j], vertex_data.world_normals_y[v + j], vertex_data.world_normals_z[v + j] };
 			
 			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], normalized_light_direction), 0);
 			Plt_Color8 directional_lighting = plt_color8_multiply_scalar(renderer->directional_lighting_color, light_amount);
@@ -46,53 +49,36 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *ren
 			lighting[j] = plt_color8_add(directional_lighting, renderer->ambient_lighting_color);
 			#endif
 			
-			pos[j] = (Plt_Vector3f){ vertex_data.clipspace_x[i + j], vertex_data.clipspace_y[i + j], vertex_data.clipspace_z[i + j] };
-			spos[j] = (Plt_Vector2i){ vertex_data.screen_positions_x[i + j], vertex_data.screen_positions_y[i + j] };
-			uvs[j] = (Plt_Vector2f){ vertex_data.model_uvs_x[i + j], vertex_data.model_uvs_y[i + j] };
+			pos[j] = (Plt_Vector3f){ vertex_data.clipspace_x[v + j], vertex_data.clipspace_y[v + j], vertex_data.clipspace_z[v + j] };
+			spos[j] = (Plt_Vector2i){ vertex_data.screen_positions_x[v + j], vertex_data.screen_positions_y[v + j] };
+			uvs[j] = (Plt_Vector2f){ vertex_data.model_uvs_x[v + j], vertex_data.model_uvs_y[v + j] };
 		}
+
+		Plt_Vector2i bounds_min = { triangle_data.bounds_min_x[i], triangle_data.bounds_min_y[i] };
+		Plt_Vector2i bounds_max = { triangle_data.bounds_max_x[i], triangle_data.bounds_max_y[i] };
+
+		simd_int4 c_increment_x = triangle_data.c_increment_x[i];
+		simd_int4 c_increment_y = triangle_data.c_increment_y[i];
 		
-		Plt_Vector2i bounds_min = spos[0];
-		Plt_Vector2i bounds_max = spos[0];
-		for (unsigned int j = 1; j < 3; ++j) {
-			bounds_min.x = plt_min(spos[j].x, bounds_min.x);
-			bounds_min.y = plt_min(spos[j].y, bounds_min.y);
-			bounds_max.x = plt_max(spos[j].x, bounds_max.x);
-			bounds_max.y = plt_max(spos[j].y, bounds_max.y);
-		}
-		
-		bounds_min.x = plt_clamp(bounds_min.x, 0, framebuffer_width);
-		bounds_min.y = plt_clamp(bounds_min.y, 0, framebuffer_height);
-		bounds_max.x = plt_clamp(bounds_max.x, 0, framebuffer_width);
-		bounds_max.y = plt_clamp(bounds_max.y, 0, framebuffer_height);
-		
-		Plt_Vector2i c1_inc = plt_renderer_get_c_increment(spos[1], spos[2]);
-		Plt_Vector2i c2_inc = plt_renderer_get_c_increment(spos[2], spos[0]);
-		Plt_Vector2i c3_inc = plt_renderer_get_c_increment(spos[0], spos[1]);
-		
-		int initial_c1 = plt_renderer_orient2d(spos[1], spos[2], (Plt_Vector2i){bounds_min.x, bounds_min.y});
-		int initial_c2 = plt_renderer_orient2d(spos[2], spos[0], (Plt_Vector2i){bounds_min.x, bounds_min.y});
-		int initial_c3 = plt_renderer_orient2d(spos[0], spos[1], (Plt_Vector2i){bounds_min.x, bounds_min.y});
-		
-		/* Half-space triangle rasterization */
-		int cy1 = initial_c1; int cy2 = initial_c2; int cy3 = initial_c3;
+		// Half-space triangle rasterization
+		simd_int4 cy = triangle_data.c_initial[i];
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
-			int cx1 = cy1; int cx2 = cy2; int cx3 = cy3;
+			simd_int4 cx = cy;
 			for (int x = bounds_min.x; x < bounds_max.x; ++x) {
-				
-				if ((cx1 <= 0) && (cx2 <= 0) && (cx3 <= 0)) {
-					float sum = cx1 + cx2 + cx3;
+				if ((cx.x <= 0) && (cx.y <= 0) && (cx.z <= 0)) {
+					float sum = cx.x + cx.y + cx.z;
 					if (sum == 0) {
 						goto end;
 					}
 					
 					int framebuffer_pixel_index = y * framebuffer_width + x;
-					Plt_Vector3f weights = {cx1 / sum, cx2 / sum, cx3 / sum};
+					Plt_Vector3f weights = {cx.x / sum, cx.y / sum, cx.z / sum};
 
 					float depth = 0;
 					depth += pos[0].z * weights.x;
 					depth += pos[1].z * weights.y;
 					depth += pos[2].z * weights.z;
-					
+
 					float depth_sample = depth_buffer[framebuffer_pixel_index];
 					if ((depth < 0) || (depth_sample < depth)) {
 						goto end;
@@ -125,10 +111,10 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *ren
 				}
 				
 				end:
-				cx1 += c1_inc.x; cx2 += c2_inc.x; cx3 += c3_inc.x;
+				cx.x += c_increment_x.x; cx.y += c_increment_x.y; cx.z += c_increment_x.z;
 			}
 			
-			cy1 += c1_inc.y; cy2 += c2_inc.y; cy3 += c3_inc.y;
+			cy.x += c_increment_y.x; cy.y += c_increment_y.y; cy.z += c_increment_y.z;
 		}
 	}
 }

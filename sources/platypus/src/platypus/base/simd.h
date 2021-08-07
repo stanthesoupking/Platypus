@@ -117,19 +117,19 @@ simd_inline simd_float4 simd_float4_multiply_add(simd_float4 a, simd_float4 b, s
 	#endif
 }
 
-simd_int4 simd_int4_create(int x, int y, int z, int w) {
+simd_inline simd_int4 simd_int4_create(int x, int y, int z, int w) {
 	return (simd_int4){x, y, z, w};
 }
 
-simd_int4 simd_int4_create_scalar(int v) {
+simd_inline simd_int4 simd_int4_create_scalar(int v) {
 	return (simd_int4){v, v, v, v};
 }
 
-simd_int4 simd_int4_load(int *p) {
+simd_inline simd_int4 simd_int4_load(int *p) {
 	return *((simd_int4 *)p);
 }
 
-simd_int4 simd_int4_add(simd_int4 a, simd_int4 b) {
+simd_inline simd_int4 simd_int4_add(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vaddq_s32(a.neon_v, b.neon_v) };
 	#elif SSE
@@ -139,7 +139,7 @@ simd_int4 simd_int4_add(simd_int4 a, simd_int4 b) {
 	#endif
 }
 
-simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b) {
+simd_inline simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vsubq_s32(a.neon_v, b.neon_v) };
 	#elif SSE
@@ -149,7 +149,7 @@ simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b) {
 	#endif
 }
 
-simd_int4 simd_int4_multiply(simd_int4 a, simd_int4 b) {
+simd_inline simd_int4 simd_int4_multiply(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vmulq_s32(a.neon_v, b.neon_v) };
 	#elif SSE

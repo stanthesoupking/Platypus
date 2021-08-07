@@ -22,6 +22,8 @@ typedef struct Plt_Vertex_Processor {
 	Plt_Vertex_Processor_Working_Buffer working_buffer;
 } Plt_Vertex_Processor;
 
+void plt_vertex_processor_free_working_buffer(Plt_Vertex_Processor *processor);
+
 Plt_Vertex_Processor *plt_vertex_processor_create() {
 	Plt_Vertex_Processor *processor = malloc(sizeof(Plt_Vertex_Processor));
 
@@ -38,6 +40,12 @@ Plt_Vertex_Processor *plt_vertex_processor_create() {
 	};
 
 	return processor;
+}
+
+void plt_vertex_processor_destroy(Plt_Vertex_Processor **processor) {
+	plt_vertex_processor_free_working_buffer(*processor);
+	free(*processor);
+	*processor = NULL;
 }
 
 void plt_vertex_processor_free_working_buffer(Plt_Vertex_Processor *processor) {
@@ -100,12 +108,6 @@ void plt_vertex_processor_resize_working_buffer(Plt_Vertex_Processor *processor,
 	}
 
 	processor->working_buffer.vertex_capacity = capacity;
-}
-
-void plt_vertex_processor_destroy(Plt_Vertex_Processor **processor) {
-	plt_vertex_processor_free_working_buffer(*processor);
-	free(*processor);
-	*processor = NULL;
 }
 
 Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Processor *processor, Plt_Mesh *mesh, Plt_Vector2i viewport, Plt_Matrix4x4f model, Plt_Matrix4x4f mvp) {
