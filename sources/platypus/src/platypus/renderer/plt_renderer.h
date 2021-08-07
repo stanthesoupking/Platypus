@@ -2,9 +2,12 @@
 #include "platypus/platypus.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
 
+typedef struct Plt_Vertex_Processor Plt_Vertex_Processor;
 typedef struct Plt_Renderer {
 	Plt_Application *application;
 	Plt_Framebuffer framebuffer;
+
+	Plt_Vertex_Processor *vertex_processor;
 	
 	float *depth_buffer;
 	unsigned int depth_buffer_width;

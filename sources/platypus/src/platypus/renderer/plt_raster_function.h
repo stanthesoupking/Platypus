@@ -1,6 +1,7 @@
 #include "plt_renderer.h"
 #include "plt_raster_function_helpers.h"
 #include "platypus/mesh/plt_mesh.h"
+#include "platypus/renderer/plt_vertex_processor.h"
 
 #ifndef RASTER_FUNC_NAME
 #error "Must supply RASTER_FUNC_NAME"
@@ -14,7 +15,7 @@
 #error "Must supply RASTER_LIGHTING_MODEL"
 #endif
 
-void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	Plt_Color8 *framebuffer_pixels = renderer->framebuffer.pixels;
 	float *depth_buffer = renderer->depth_buffer;
 	int framebuffer_width = renderer->framebuffer.width;
@@ -24,47 +25,30 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	Plt_Vector3f normalized_light_direction = plt_vector3f_normalize(renderer->directional_lighting_direction);
 	
 	for (unsigned int i = 0; i < mesh->vertex_count; i += 3) {
-		Plt_Vector4f pos[3];
+		Plt_Vector3f pos[3];
 		
 		Plt_Vector2i spos[3];
 		Plt_Vector4f wpos[3];
 		Plt_Vector2f uvs[3];
 		Plt_Vector3f normals[3];
-		Plt_Vector3f face_normal = {0, 0, 0};
 		
 		#if RASTER_LIGHTING_MODEL == 1
 		Plt_Color8 lighting[3];
 		#endif
 		
-		bool visible = false;
 		for (unsigned int j = 0; j < 3; ++j) {
-			pos[j] = (Plt_Vector4f) {
-				mesh->position_x[i + j],
-				mesh->position_y[i + j],
-				mesh->position_z[i + j],
-				1.0f
-			};
-			
-			#if RASTER_TEXTURED
-				uvs[j] = plt_mesh_get_uv(mesh, i + j);
-			#endif
-			
 			#if RASTER_LIGHTING_MODEL == 1
-			Plt_Vector3f model_normal = plt_mesh_get_normal(mesh, i + j);
-			Plt_Vector4f world_normal = plt_matrix_multiply_vector4f(renderer->model_matrix, (Plt_Vector4f){model_normal.x, model_normal.y, model_normal.z, 0.0f});
-			normals[j] = plt_vector3f_normalize((Plt_Vector3f){world_normal.x, world_normal.y, world_normal.z});
+			normals[j] = (Plt_Vector3f){ vertex_data.world_normals_x[i + j], vertex_data.world_normals_y[i + j], vertex_data.world_normals_z[i + j] };
 			
-			face_normal = plt_vector3f_add(face_normal, normals[j]);
-
 			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], normalized_light_direction), 0);
 			Plt_Color8 directional_lighting = plt_color8_multiply_scalar(renderer->directional_lighting_color, light_amount);
 
 			lighting[j] = plt_color8_add(directional_lighting, renderer->ambient_lighting_color);
 			#endif
 			
-			pos[j] = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos[j]);
-			wpos[j] = (Plt_Vector4f){ pos[j].x / pos[j].w, pos[j].y / pos[j].w, pos[j].z / pos[j].w, 1.0f };
-			spos[j] = plt_renderer_clipspace_to_pixel(renderer, (Plt_Vector2f) { wpos[j].x, wpos[j].y });
+			pos[j] = (Plt_Vector3f){ vertex_data.clipspace_x[i + j], vertex_data.clipspace_y[i + j], vertex_data.clipspace_z[i + j] };
+			spos[j] = (Plt_Vector2i){ vertex_data.screen_positions_x[i + j], vertex_data.screen_positions_y[i + j] };
+			uvs[j] = (Plt_Vector2f){ vertex_data.model_uvs_x[i + j], vertex_data.model_uvs_y[i + j] };
 		}
 		
 		Plt_Vector2i bounds_min = spos[0];
@@ -103,13 +87,11 @@ void RASTER_FUNC_NAME(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 					
 					int framebuffer_pixel_index = y * framebuffer_width + x;
 					Plt_Vector3f weights = {cx1 / sum, cx2 / sum, cx3 / sum};
-					
-					Plt_Vector2i pixel_pos = (Plt_Vector2i){x, y};
-					
+
 					float depth = 0;
-					depth += (pos[0].z * weights.x) / pos[0].w;
-					depth += (pos[1].z * weights.y) / pos[1].w;
-					depth += (pos[2].z * weights.z) / pos[2].w;
+					depth += pos[0].z * weights.x;
+					depth += pos[1].z * weights.y;
+					depth += pos[2].z * weights.z;
 					
 					float depth_sample = depth_buffer[framebuffer_pixel_index];
 					if ((depth < 0) || (depth_sample < depth)) {

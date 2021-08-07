@@ -5,6 +5,7 @@
 #include "platypus/mesh/plt_mesh.c"
 #include "platypus/mesh/plt_mesh_ply.c"
 #include "platypus/renderer/plt_renderer.c"
+#include "platypus/renderer/plt_vertex_processor.c"
 #include "platypus/texture/plt_texture.c"
 #include "platypus/world/plt_object.c"
 #include "platypus/world/plt_world.c"

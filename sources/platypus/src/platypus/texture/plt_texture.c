@@ -73,10 +73,8 @@ inline Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) 
 }
 
 inline void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value) {
-	if (pos.x < 0 || pos.x >= texture->width || pos.y < 0 || pos.y >= texture->height) {
-		return;
-	}
-	
+	pos.x = pos.x % texture->width;
+	pos.y = pos.y % texture->height;
 	texture->data[pos.y * texture->width + pos.x] = value;
 }
 
