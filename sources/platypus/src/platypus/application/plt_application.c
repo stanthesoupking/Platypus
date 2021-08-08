@@ -12,10 +12,7 @@
 
 #if PLT_PLATFORM_WINDOWS
 #include <time.h>
-#elif PLT_PLATFORM_MACOS
-#include <unistd.h>
-#include <sys/time.h>
-#elif PLT_PLATFORM_LINUX
+#elif PLT_PLATFORM_UNIX
 #include <unistd.h>
 #include <time.h>
 #endif
@@ -30,22 +27,24 @@ typedef struct Plt_Application {
 	Plt_World *world;
 
 	bool should_quit;
-	unsigned int target_frame_ms;
 
-	float millis_at_creation;
+	unsigned int target_fps;
+	float target_frame_ms;
+
+	double millis_at_creation;
+	double millis_at_since_last_update;
 
 	unsigned int scale;
 	Plt_Color8 clear_color;
 } Plt_Application;
 
-float plt_application_current_milliseconds();
+double plt_application_current_milliseconds();
 void plt_application_render(Plt_Application *application);
 void plt_application_update_framebuffer(Plt_Application *application);
 
 Plt_Application *plt_application_create(const char *title, unsigned int width, unsigned int height, unsigned int scale, Plt_Application_Option options) {
 	Plt_Application *application = malloc(sizeof(Plt_Application));
 
-	application->target_frame_ms = 16; // 60 FPS
 	application->clear_color = plt_color8_make(80,80,80,255);
 	application->scale = scale;
 
@@ -64,6 +63,8 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	application->renderer = plt_renderer_create(application, application->framebuffer);
 
 	application->millis_at_creation = plt_application_current_milliseconds();
+	application->millis_at_since_last_update = plt_application_current_milliseconds();
+	plt_application_set_target_fps(application, 60);
 
 	application->framebuffer_surface = NULL;
 	plt_application_update_framebuffer(application);
@@ -99,6 +100,11 @@ void plt_application_update(Plt_Application *application) {
 		plt_world_render(application->world, application->renderer);
 		plt_renderer_present(application->renderer);
 	}
+
+	double time = plt_application_current_milliseconds();
+	double frame_time = time - application->millis_at_since_last_update;
+	usleep(plt_max(application->target_frame_ms - frame_time, 0) * 1000);
+	application->millis_at_since_last_update = plt_application_current_milliseconds();
 }
 
 void plt_application_update_framebuffer(Plt_Application *application) {
@@ -148,19 +154,24 @@ Plt_World *plt_application_get_world(Plt_Application *application) {
 	return application->world;
 }
 
-float plt_application_current_milliseconds() {
+void plt_application_set_target_fps(Plt_Application *application, unsigned int fps) {
+	application->target_fps = fps;
+	application->target_frame_ms = 1000.0f/(float)fps;
+}
+
+unsigned int plt_application_get_target_fps(Plt_Application *application) {
+	return application->target_fps;
+}
+
+double plt_application_current_milliseconds() {
 #if PLT_PLATFORM_WINDOWS
 	clock_t c = clock();
-	float elapsed = ((float)c) / CLOCKS_PER_SEC * 1000.0f;
+	double elapsed = ((double)c) / CLOCKS_PER_SEC * 1000.0;
 	return elapsed;
-#elif PLT_PLATFORM_MACOS 
+#elif PLT_PLATFORM_UNIX
 	struct timespec curTime;
-	clock_gettime(_CLOCK_REALTIME, &curTime);
-	return curTime.tv_nsec / 1000000.0f;
-#elif PLT_PLATFORM_LINUX
-	struct timespec curTime;
-	clock_gettime(CLOCK_REALTIME, &curTime);
-	return curTime.tv_nsec / 1000000.0f;
+	clock_gettime(CLOCK_MONOTONIC, &curTime);
+	return (curTime.tv_sec * 1000.0) + (curTime.tv_nsec / 1000000.0);
 #endif
 }
 

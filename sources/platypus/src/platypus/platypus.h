@@ -199,6 +199,9 @@ Plt_Renderer *plt_application_get_renderer(Plt_Application *application);
 void plt_application_set_world(Plt_Application *application, Plt_World *world);
 Plt_World *plt_application_get_world(Plt_Application *application);
 
+void plt_application_set_target_fps(Plt_Application *application, unsigned int fps);
+unsigned int plt_application_get_target_fps(Plt_Application *application);
+
 float plt_application_get_milliseconds_since_creation(Plt_Application *application);
 
 // MARK: Mesh
