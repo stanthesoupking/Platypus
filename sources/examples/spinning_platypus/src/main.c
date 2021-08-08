@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	Plt_Object_Type_Descriptor type_descriptors[] = {};
+	Plt_Object_Type_Descriptor type_descriptors[1];
 	
 	Plt_World *world = plt_world_create(128, type_descriptors, 0);
 	plt_application_set_world(app, world);
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 	Plt_Object *test4_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 4");
 	
 	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Flying Camera");
-	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 70.0f };
+	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 80.0f };
 	flying_camera_object->transform.rotation = (Plt_Vector3f){ 0.4f, 0.0f, 0.0f };
 	
 	Plt_Object *camera_object = plt_world_create_object(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");

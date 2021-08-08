@@ -16,12 +16,15 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 	world->object_count = 0;
 	world->object_storage_capacity = object_storage_capacity;
 
+	Plt_Object_Type_Descriptor base_type_descriptors[PLT_WORLD_BASE_TYPE_DESCRIPTOR_COUNT];
+	plt_world_get_base_type_descriptors(&base_type_descriptors); 
+
 	world->type_count = 0;
-	int total_types = base_type_descriptor_count + type_descriptor_count;
+	int total_types = PLT_WORLD_BASE_TYPE_DESCRIPTOR_COUNT + type_descriptor_count;
 	world->types = malloc(sizeof(Plt_Registered_Object_Type) * total_types);
 
 	// Register base object types
-	for (int i = 0; i < base_type_descriptor_count; ++i) {
+	for (int i = 0; i < PLT_WORLD_BASE_TYPE_DESCRIPTOR_COUNT; ++i) {
 		plt_world_register_object_type(world, base_type_descriptors[i]);
 	}
 

@@ -7,6 +7,8 @@
 #else
 #define SSE 1
 #include <xmmintrin.h>
+#include <emmintrin.h>
+#include <smmintrin.h>
 #endif
 
 // MARK: Float
@@ -53,7 +55,7 @@ typedef struct simd_int4 {
 #ifdef NEON
 		int32x4_t neon_v;
 #elif SSE
-		__m128 sse_v;
+		__m128i sse_v;
 #endif
 	};
 } simd_int4;
@@ -133,7 +135,7 @@ simd_inline simd_int4 simd_int4_add(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vaddq_s32(a.neon_v, b.neon_v) };
 	#elif SSE
-	// TODO
+	return (simd_int4){ .sse_v = _mm_add_epi32(a.sse_v, b.sse_v) };
 	#else
 	return (simd_int4){ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w };
 	#endif
@@ -143,7 +145,7 @@ simd_inline simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vsubq_s32(a.neon_v, b.neon_v) };
 	#elif SSE
-	// TODO
+	return (simd_int4){ .sse_v = _mm_sub_epi32(a.sse_v, b.sse_v) };
 	#else
 	return (simd_int4){ a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w };
 	#endif
@@ -153,7 +155,7 @@ simd_inline simd_int4 simd_int4_multiply(simd_int4 a, simd_int4 b) {
 	#ifdef NEON
 	return (simd_int4){ .neon_v = vmulq_s32(a.neon_v, b.neon_v) };
 	#elif SSE
-	// TODO
+	return (simd_int4){ .sse_v = _mm_mullo_epi32(a.sse_v, b.sse_v) };
 	#else
 	return (simd_int4){ a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
 	#endif

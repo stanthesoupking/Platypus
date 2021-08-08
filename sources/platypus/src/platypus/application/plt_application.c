@@ -12,6 +12,7 @@
 
 #if PLT_PLATFORM_WINDOWS
 #include <time.h>
+#include <windows.h>
 #elif PLT_PLATFORM_UNIX
 #include <unistd.h>
 #include <time.h>
@@ -103,7 +104,12 @@ void plt_application_update(Plt_Application *application) {
 
 	double time = plt_application_current_milliseconds();
 	double frame_time = time - application->millis_at_since_last_update;
-	usleep(plt_max(application->target_frame_ms - frame_time, 0) * 1000);
+	double wait_time_ms = plt_max(application->target_frame_ms - frame_time, 0);
+#if PLT_PLATFORM_WINDOWS
+	Sleep(wait_time_ms);
+#else
+	usleep(wait_time_ms * 1000);
+#endif
 	application->millis_at_since_last_update = plt_application_current_milliseconds();
 }
 

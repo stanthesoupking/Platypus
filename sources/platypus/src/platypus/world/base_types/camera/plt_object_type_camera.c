@@ -1,5 +1,7 @@
 #include "plt_object_type_camera.h"
 
+#include <stdlib.h>
+
 Plt_Matrix4x4f plt_object_type_camera_get_view_matrix(Plt_Object *camera) {
 	// TODO: Assert that this is a camera object
 	return plt_matrix_invert(plt_object_get_model_matrix(camera));
@@ -11,4 +13,13 @@ Plt_Matrix4x4f plt_object_type_camera_get_projection_matrix(Plt_Object *camera, 
 
 	float aspect_ratio = viewport.x / (float)viewport.y;
 	return plt_matrix_perspective_make(aspect_ratio, camera_type_data->fov, camera_type_data->near_z, camera_type_data->far_z);
+}
+
+Plt_Object_Type_Descriptor plt_object_type_camera_get_descriptor() {
+	return (Plt_Object_Type_Descriptor) {
+		.id = Plt_Object_Type_Camera,
+		.data_size = sizeof(Plt_Object_Type_Camera_Data),
+		.update = NULL,
+		.render = NULL
+	};
 }

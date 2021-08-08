@@ -13,4 +13,8 @@ find_package(SDL2 REQUIRED)
 include_directories(platypus ${SDL2_INCLUDE_DIR})
 
 add_library(platypus ${PLT_SRC})
-target_link_libraries(platypus ${SDL2_LIBRARY} m)
+target_link_libraries(platypus ${SDL2_LIBRARY})
+
+if(UNIX)
+    target_link_libraries(platypus m)
+endif()
