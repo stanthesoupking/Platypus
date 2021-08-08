@@ -26,7 +26,7 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Proc
 	Plt_Vector3f normalized_light_direction = plt_vector3f_normalize(renderer->directional_lighting_direction);
 	
 	for (unsigned int i = 0; i < triangle_data.triangle_count; ++i) {
-		unsigned int v = i * 3;
+		unsigned int v = triangle_data.vertex_data_offset[i];
 
 		Plt_Vector3f pos[3];
 		

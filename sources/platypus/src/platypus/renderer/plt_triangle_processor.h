@@ -7,6 +7,8 @@
 typedef struct Plt_Triangle_Processor Plt_Triangle_Processor;
 typedef struct Plt_Triangle_Processor_Result {
 	unsigned int triangle_count;
+	
+	unsigned int *vertex_data_offset;
 
 	int *bounds_min_x;
 	int *bounds_min_y;
