@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 
 	Plt_Object_Type_Descriptor type_descriptors[] = {};
 	
-	Plt_World *world = plt_world_create(128, type_descriptors, 0, true);
+	Plt_World *world = plt_world_create(128, type_descriptors, 0);
 	plt_application_set_world(app, world);
 
 //	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
@@ -18,8 +18,8 @@ int main(int argc, char **argv) {
 
 	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Platypus");
 
-	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, platypus_object, Plt_Object_Type_Mesh, "Mesh");
-	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)platypus_mesh_renderer->type_data;
+	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, platypus_object, Plt_Object_Type_Mesh_Renderer, "Mesh");
+	Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = platypus_mesh_renderer->type_data;
 	mesh_type_data->mesh = platypus_mesh;
 	mesh_type_data->texture = platypus_texture;
 
@@ -28,6 +28,14 @@ int main(int argc, char **argv) {
 	Plt_Object *test2_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 2");
 	Plt_Object *test3_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 3");
 	Plt_Object *test4_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 4");
+	
+	Plt_Object *camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Camera, "Main Camera");
+	camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.1f, 32.0f };
+	camera_object->transform.rotation = (Plt_Vector3f){ 0.5f, 0.0f, 0.0f };
+	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
+	camera_type_data->fov = plt_math_deg2rad(40.0f);
+	camera_type_data->near_z = 0.1f;
+	camera_type_data->far_z = 500.0f;
 
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));
@@ -51,18 +59,9 @@ int main(int argc, char **argv) {
 		float start = plt_application_get_milliseconds_since_creation(app);
 		
 		// Render
-		platypus_object->transform.translation = (Plt_Vector3f){0,0.1f,-15.0f};
-		platypus_object->transform.rotation = (Plt_Vector3f){PLT_PI,r - 3.0f,0};
-		platypus_object->transform.scale = (Plt_Vector3f){0.7f, 0.7f, 0.7f};
-		
-		Plt_Matrix4x4f camera_translate = plt_matrix_translate_make((Plt_Vector3f){0,5.5f,-10});
-		Plt_Matrix4x4f camera_rotate = plt_matrix_rotate_make((Plt_Vector3f){-0.4f,0,0});
-		plt_renderer_set_view_matrix(renderer, plt_matrix_multiply(camera_translate, camera_rotate));
-
-		Plt_Vector2i size = plt_renderer_get_framebuffer_size(renderer);
-		float aspect_ratio = size.x / (float)size.y;
-		Plt_Matrix4x4f projection = plt_matrix_perspective_make(aspect_ratio, plt_math_deg2rad(70.0f), 0.1f, 200.0f);
-		plt_renderer_set_projection_matrix(renderer, projection);
+		platypus_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 0.0f };
+		platypus_object->transform.rotation = (Plt_Vector3f){ PLT_PI, r - 3.0f, 0 };
+		platypus_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
 
 		plt_application_update(app);
 

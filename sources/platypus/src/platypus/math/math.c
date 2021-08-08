@@ -101,6 +101,14 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 	}};
 }
 
+Plt_Transform plt_transform_invert(Plt_Transform transform) {
+	return (Plt_Transform) {
+		.translation = plt_vector3f_multiply_scalar(transform.translation, -1.0f),
+		.rotation = plt_vector3f_multiply_scalar(transform.rotation, -1.0f),
+		.scale = plt_vector3f_multiply_scalar(transform.scale, -1.0f),
+	};
+}
+
 Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform) {
 	Plt_Matrix4x4f translate = plt_matrix_translate_make(transform.translation);
 	Plt_Matrix4x4f rotate = plt_matrix_rotate_make(transform.rotation);

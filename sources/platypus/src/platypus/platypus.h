@@ -57,6 +57,7 @@ Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate);
 
 Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z);
 
+Plt_Transform plt_transform_invert(Plt_Transform transform);
 Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform);
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
@@ -121,7 +122,7 @@ typedef struct Plt_Object_Type_Descriptor {
 	void (*render)(Plt_Object *object, void *type_data, Plt_Renderer *renderer);
 } Plt_Object_Type_Descriptor;
 
-Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types);
+Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
 void plt_world_destroy(Plt_World **world);
 
 Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
@@ -134,16 +135,25 @@ Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object);
 
 #define PLT_BASE_TYPE_ID_OFFSET 512
 const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
-const static Plt_Object_Type_ID Plt_Object_Type_Mesh = PLT_BASE_TYPE_ID_OFFSET + 1;
+const static Plt_Object_Type_ID Plt_Object_Type_Mesh_Renderer = PLT_BASE_TYPE_ID_OFFSET + 1;
 const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 2;
 
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;
-typedef struct Plt_Object_Type_Mesh_Data {
+typedef struct Plt_Object_Type_Mesh_Renderer_Data {
 	Plt_Mesh *mesh;
 	Plt_Texture *texture;
 	Plt_Color8 color;
-} Plt_Object_Type_Mesh_Data;
+} Plt_Object_Type_Mesh_Renderer_Data;
+
+typedef struct Plt_Object_Type_Camera_Data {
+	// Vertical FOV in radians
+	float fov;
+
+	// Near and far clipping planes
+	float near_z;
+	float far_z;
+} Plt_Object_Type_Camera_Data;
 
 // MARK: Renderer
 

@@ -8,5 +8,7 @@
 #include "platypus/renderer/plt_vertex_processor.c"
 #include "platypus/renderer/plt_triangle_processor.c"
 #include "platypus/texture/plt_texture.c"
+#include "platypus/world/base_types/camera/plt_object_type_camera.c"
+#include "platypus/world/base_types/mesh_renderer/plt_object_type_mesh_renderer.c"
 #include "platypus/world/plt_object.c"
 #include "platypus/world/plt_world.c"

@@ -7,7 +7,7 @@
 
 void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor descriptor);
 
-Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count, bool include_base_types) {
+Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count) {
 	plt_assert(object_storage_capacity > 0, "Object storage capacity must be >= 1");
 
 	Plt_World *world = malloc(sizeof(Plt_World));
@@ -17,15 +17,15 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 	world->object_storage_capacity = object_storage_capacity;
 
 	world->type_count = 0;
-	int total_types = (include_base_types ? base_type_descriptor_count : 0) + type_descriptor_count;
+	int total_types = base_type_descriptor_count + type_descriptor_count;
 	world->types = malloc(sizeof(Plt_Registered_Object_Type) * total_types);
 
-	// Register object types
-	if (include_base_types) {
-		for (int i = 0; i < base_type_descriptor_count; ++i) {
-			plt_world_register_object_type(world, base_type_descriptors[i]);
-		}
+	// Register base object types
+	for (int i = 0; i < base_type_descriptor_count; ++i) {
+		plt_world_register_object_type(world, base_type_descriptors[i]);
 	}
+
+	// Register custom object types
 	for (int i = 0; i < type_descriptor_count; ++i) {
 		plt_world_register_object_type(world, type_descriptors[i]);
 	}
@@ -270,6 +270,27 @@ void plt_world_update(Plt_World *world) {
 
 void plt_world_render(Plt_World *world, Plt_Renderer *renderer) {
 	plt_world_update_object_matrices(world);
+
+	// Get camera object
+	Plt_Object *camera = NULL;
+	for (unsigned int i = 0; i < world->type_count; ++i) {
+		Plt_Registered_Object_Type type = world->types[i];
+		if (type.id == Plt_Object_Type_Camera) {
+			if (type.object_entry_count > 0) {
+				camera = ((Plt_Registered_Object_Type_Entry *)type.object_entries)[0].object;
+			}
+			break;
+		}
+	}
+	if (!camera) {
+		printf("No camera in world.\n");
+		plt_renderer_clear(renderer, plt_color8_make(0, 0, 0, 255));
+		return;
+	}
+
+	Plt_Vector2i viewport = { renderer->framebuffer.width, renderer->framebuffer.height };
+	plt_renderer_set_view_matrix(renderer, plt_object_type_camera_get_view_matrix(camera));
+	plt_renderer_set_projection_matrix(renderer, plt_object_type_camera_get_projection_matrix(camera, viewport));
 
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];

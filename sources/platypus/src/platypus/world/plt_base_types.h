@@ -3,28 +3,13 @@
 #include "platypus/platypus.h"
 #include <stdlib.h>
 
+#include "platypus/world/base_types/mesh_renderer/plt_object_type_mesh_renderer.h"
+#include "platypus/world/base_types/camera/plt_object_type_camera.h"
+
 void _mesh_type_render(Plt_Object *object, void *data, Plt_Renderer *renderer);
 
-const static unsigned int base_type_descriptor_count = 1;
+const static unsigned int base_type_descriptor_count = 2;
 const static Plt_Object_Type_Descriptor base_type_descriptors[] = {
-	{ // Mesh
-		.id = Plt_Object_Type_Mesh,
-		.data_size = sizeof(Plt_Object_Type_Mesh_Data),
-		.update = NULL,
-		.render = _mesh_type_render
-	}
+	PLT_OBJECT_TYPE_MESH_RENDERER_DESCRIPTOR,
+	PLT_OBJECT_TYPE_CAMERA_DESCRIPTOR
 };
-
-void _mesh_type_render(Plt_Object *object, void *type_data, Plt_Renderer *renderer) {
-	Plt_Object_Type_Mesh_Data *mesh_type_data = (Plt_Object_Type_Mesh_Data *)type_data;
-	
-	if (!mesh_type_data->mesh) {
-		return;
-	}
-	
-	plt_renderer_set_model_matrix(renderer, plt_object_get_model_matrix(object));
-	plt_renderer_bind_texture(renderer, mesh_type_data->texture);
-	plt_renderer_set_render_color(renderer, mesh_type_data->color);
-	plt_renderer_set_primitive_type(renderer, Plt_Primitive_Type_Triangle);
-	plt_renderer_draw_mesh(renderer, mesh_type_data->mesh);
-}
