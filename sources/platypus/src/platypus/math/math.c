@@ -113,7 +113,7 @@ Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform) {
 	Plt_Matrix4x4f translate = plt_matrix_translate_make(transform.translation);
 	Plt_Matrix4x4f rotate = plt_matrix_rotate_make(transform.rotation);
 	Plt_Matrix4x4f scale = plt_matrix_scale_make(transform.scale);
-	return plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
+	return plt_matrix_multiply(plt_matrix_multiply(rotate, scale), translate);
 }
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
