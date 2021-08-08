@@ -210,7 +210,7 @@ void plt_application_fast_blit(Plt_Application *application) {
 		}
 		
 		// Repeat it
-		for (unsigned int i = 0; i < scale_factor; ++i) {
+		for (unsigned int i = 1; i < scale_factor; ++i) {
 			memcpy(dest_pixels + (dy + i) * dest_width, dest_pixels + dy * dest_width, sizeof(Plt_Color8) * dest_width);
 		}
 	}
