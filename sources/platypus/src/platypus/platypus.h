@@ -50,6 +50,7 @@ Plt_Matrix4x4f plt_matrix_create(float v[4][4]);
 Plt_Matrix4x4f plt_matrix_identity();
 Plt_Matrix4x4f plt_matrix_zero();
 Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f a, Plt_Matrix4x4f b);
+Plt_Matrix4x4f plt_matrix_invert(Plt_Matrix4x4f m);
 
 Plt_Matrix4x4f plt_matrix_translate_make(Plt_Vector3f translate);
 Plt_Matrix4x4f plt_matrix_scale_make(Plt_Vector3f scale);

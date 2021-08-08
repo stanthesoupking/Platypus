@@ -29,9 +29,11 @@ int main(int argc, char **argv) {
 	Plt_Object *test3_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 3");
 	Plt_Object *test4_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 4");
 	
-	Plt_Object *camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Camera, "Main Camera");
-	camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 80.0f };
-	camera_object->transform.rotation = (Plt_Vector3f){ 0.0f, 0.0f, 0.0f };
+	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Flying Camera");
+	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 70.0f };
+	flying_camera_object->transform.rotation = (Plt_Vector3f){ 0.4f, 0.0f, 0.0f };
+	
+	Plt_Object *camera_object = plt_world_create_object(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
 	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
 	camera_type_data->fov = plt_math_deg2rad(15.0f);
 	camera_type_data->near_z = 0.1f;
