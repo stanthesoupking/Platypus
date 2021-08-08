@@ -13,8 +13,8 @@ int main(int argc, char **argv) {
 
 //	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
 //	Plt_Texture *platypus_texture = plt_texture_load("../sources/examples/spinning_platypus/assets/platypus.png");
-	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/platypus.ply");
-	Plt_Texture *platypus_texture = plt_texture_load("assets/platypus.png");
+	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/gun.ply");
+	Plt_Texture *platypus_texture = plt_texture_load("assets/gun.png");
 
 	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Platypus");
 
@@ -30,10 +30,10 @@ int main(int argc, char **argv) {
 	Plt_Object *test4_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Test Object 4");
 	
 	Plt_Object *camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Camera, "Main Camera");
-	camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 40.0f };
+	camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 80.0f };
 	camera_object->transform.rotation = (Plt_Vector3f){ 0.0f, 0.0f, 0.0f };
 	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
-	camera_type_data->fov = plt_math_deg2rad(40.0f);
+	camera_type_data->fov = plt_math_deg2rad(15.0f);
 	camera_type_data->near_z = 0.1f;
 	camera_type_data->far_z = 500.0f;
 
