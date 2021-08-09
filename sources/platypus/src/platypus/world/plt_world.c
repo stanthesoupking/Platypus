@@ -17,7 +17,7 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 	world->object_storage_capacity = object_storage_capacity;
 
 	Plt_Object_Type_Descriptor base_type_descriptors[PLT_WORLD_BASE_TYPE_DESCRIPTOR_COUNT];
-	plt_world_get_base_type_descriptors(&base_type_descriptors); 
+	plt_world_get_base_type_descriptors(base_type_descriptors); 
 
 	world->type_count = 0;
 	int total_types = PLT_WORLD_BASE_TYPE_DESCRIPTOR_COUNT + type_descriptor_count;
@@ -100,7 +100,7 @@ Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Ob
 	object->name = name;
 	object->transform = (Plt_Transform) {
 		.translation = (Plt_Vector3f){0.0f, 0.0f, 0.0f},
-		.rotation = (Plt_Vector3f){0.0f, 0.0f, 0.0f},
+		.rotation = (Plt_Quaternion){0.0f, 0.0f, 0.0f, 1.0f},
 		.scale = (Plt_Vector3f){1.0f, 1.0f, 1.0f},
 	};
 	object->type_data = NULL;
@@ -252,26 +252,26 @@ void plt_world_update_object_matrices(Plt_World *world) {
 	}
 }
 
-void plt_world_update(Plt_World *world) {
+void plt_world_update(Plt_World *world, Plt_Frame_State frame_state) {
 	plt_world_update_object_matrices(world);
 
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];
-		void (*update_func)(Plt_Object *object, void *type_data) = type.descriptor.update;
+		void (*update_func)(Plt_Object *object, void *type_data, Plt_Frame_State frame_state) = type.descriptor.update;
 		if (!update_func) {
 			continue;
 		}
 		
 		Plt_Registered_Object_Type_Entry *entry = (Plt_Registered_Object_Type_Entry *)type.object_entries;
 		for (unsigned int j = 0; j < type.object_entry_count; ++j) {
-			update_func(entry->object, entry->data);
+			update_func(entry->object, entry->data, frame_state);
 			
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}
 	}
 }
 
-void plt_world_render(Plt_World *world, Plt_Renderer *renderer) {
+void plt_world_render(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
 	plt_world_update_object_matrices(world);
 
 	// Get camera object
@@ -297,14 +297,14 @@ void plt_world_render(Plt_World *world, Plt_Renderer *renderer) {
 
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];
-		void (*render_func)(Plt_Object *object, void *type_data, Plt_Renderer *renderer) = type.descriptor.render;
+		void (*render_func)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) = type.descriptor.render;
 		if (!render_func) {
 			continue;
 		}
 		
 		Plt_Registered_Object_Type_Entry *entry = (Plt_Registered_Object_Type_Entry *)type.object_entries;
 		for (unsigned int j = 0; j < type.object_entry_count; ++j) {
-			render_func(entry->object, entry->data, renderer);
+			render_func(entry->object, entry->data, frame_state, renderer);
 			
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}

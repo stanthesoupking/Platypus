@@ -6,6 +6,7 @@
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/renderer/plt_renderer.h"
 #include "platypus/world/plt_world.h"
+#include "platypus/input/plt_input_state.h"
 
 #include "platypus/base/platform.h"
 #include "platypus/base/macros.h"
@@ -26,6 +27,7 @@ typedef struct Plt_Application {
 
 	Plt_Renderer *renderer;
 	Plt_World *world;
+	Plt_Input_State input_state;
 
 	bool should_quit;
 
@@ -63,6 +65,8 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	};
 	application->renderer = plt_renderer_create(application, application->framebuffer);
 
+	plt_input_state_initialise(&application->input_state);
+
 	application->millis_at_creation = plt_application_current_milliseconds();
 	application->millis_at_since_last_update = plt_application_current_milliseconds();
 	plt_application_set_target_fps(application, 60);
@@ -85,20 +89,29 @@ bool plt_application_should_close(Plt_Application *application) {
 }
 
 void plt_application_update(Plt_Application *application) {
+	Plt_Frame_State frame_state = {
+		.delta_time = 0.01f, // TODO: get delta time
+		.input_state = &application->input_state
+	};
+	
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
 			application->should_quit = true;
+		} else if (event.type == SDL_KEYDOWN) {
+			plt_input_state_set_key_down(&application->input_state, plt_key_from_sdl_keycode(event.key.keysym.sym));
+		} else if (event.type == SDL_KEYUP) {
+			plt_input_state_set_key_up(&application->input_state, plt_key_from_sdl_keycode(event.key.keysym.sym));
 		}
 	}
 
 	plt_application_update_framebuffer(application);
 
 	if (application->world) {
-		plt_world_update(application->world);
+		plt_world_update(application->world, frame_state);
 
 		plt_renderer_clear(application->renderer, plt_color8_make(35,45,30,255));
-		plt_world_render(application->world, application->renderer);
+		plt_world_render(application->world, frame_state, application->renderer);
 		plt_renderer_present(application->renderer);
 	}
 

@@ -155,14 +155,14 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 Plt_Transform plt_transform_invert(Plt_Transform transform) {
 	return (Plt_Transform) {
 		.translation = plt_vector3f_multiply_scalar(transform.translation, -1.0f),
-		.rotation = plt_vector3f_multiply_scalar(transform.rotation, -1.0f),
+		.rotation = plt_quaternion_invert(transform.rotation),
 		.scale = plt_vector3f_multiply_scalar(transform.scale, -1.0f),
 	};
 }
 
 Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform) {
 	Plt_Matrix4x4f translate = plt_matrix_translate_make(transform.translation);
-	Plt_Matrix4x4f rotate = plt_matrix_rotate_make(transform.rotation);
+	Plt_Matrix4x4f rotate = plt_quaternion_to_matrix(transform.rotation);
 	Plt_Matrix4x4f scale = plt_matrix_scale_make(transform.scale);
 	return plt_matrix_multiply(plt_matrix_multiply(rotate, scale), translate);
 }
@@ -188,6 +188,14 @@ float plt_vector3f_dot_product(Plt_Vector3f a, Plt_Vector3f b) {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
+Plt_Vector3f plt_vector3f_cross(Plt_Vector3f a, Plt_Vector3f b) {
+	return (Plt_Vector3f) {
+		a.y * b.z - a.z * b.y,
+		a.z * b.x - a.x * b.z,
+		a.x * b.y - a.y * b.x
+	};
+}
+
 Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v) {
 	float magnitude = sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
 	return (Plt_Vector3f) {
@@ -211,6 +219,18 @@ Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b) {
 
 Plt_Vector3f plt_vector3f_subtract(Plt_Vector3f a, Plt_Vector3f b) {
 	return (Plt_Vector3f){ a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+Plt_Vector2f plt_vector2f_multiply(Plt_Vector2f a, Plt_Vector2f b) {
+	return (Plt_Vector2f){ a.x * b.x, a.y * b.y };
+}
+
+Plt_Vector3f plt_vector3f_multiply(Plt_Vector3f a, Plt_Vector3f b) {
+	return (Plt_Vector3f){ a.x * b.x, a.y * b.y, a.z * b.z };
+}
+
+Plt_Vector4f plt_vector4f_multiply(Plt_Vector4f a, Plt_Vector4f b) {
+	return (Plt_Vector4f){ a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w };
 }
 
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b) {
@@ -248,4 +268,106 @@ float plt_math_rad2deg(float rad) {
 
 float plt_math_deg2rad(float deg) {
 	return deg * (PLT_PI / 180.0f);
+}
+
+// MARK: Quaternion
+
+Plt_Quaternion plt_quaternion_create_from_euler(Plt_Vector3f euler_angles) {
+	Plt_Vector3f c = (Plt_Vector3f){cosf(euler_angles.x * 0.5f), cosf(euler_angles.y * 0.5f), cosf(euler_angles.z * 0.5f)};
+	Plt_Vector3f s = (Plt_Vector3f){sinf(euler_angles.x * 0.5f), sinf(euler_angles.y * 0.5f), sinf(euler_angles.z * 0.5f)};
+
+	Plt_Quaternion q = {
+		.x = s.x * c.y * c.z - c.x * s.y * s.z,
+		.y = c.x * s.y * c.z + s.x * c.y * s.z,
+		.z = c.x * c.y * s.z - s.x * s.y * c.z,
+		.w = c.x * c.y * c.z + s.x * s.y * s.z
+	};
+	
+	return q;
+}
+
+Plt_Quaternion plt_quaternion_invert(Plt_Quaternion q) {
+	return (Plt_Quaternion) { -q.x, -q.y, -q.z, q.w };
+}
+
+Plt_Quaternion plt_quaternion_normalise(Plt_Quaternion q) {
+	float d = sqrtf(q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w);
+	return (Plt_Quaternion) {
+		q.x / d,
+		q.y / d,
+		q.z / d,
+		q.w / d
+	};
+}
+
+Plt_Quaternion plt_quaternion_add(Plt_Quaternion a, Plt_Quaternion b) {
+	return plt_vector4f_add(a, b);
+}
+
+Plt_Quaternion plt_quaternion_multiply(Plt_Quaternion a, Plt_Quaternion b) {
+	Plt_Quaternion result = {
+		.w = a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z,
+		.x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y,
+		.y = a.w * b.y + a.y * b.w + a.z * b.x - a.x * b.z,
+		.z = a.w * b.z + a.z * b.w + a.x * b.y - a.y * b.x
+	};
+
+	return plt_quaternion_normalise(result);
+}
+
+Plt_Vector3f plt_quaternion_to_euler(Plt_Quaternion q) {
+	Plt_Vector3f euler_angles;
+	
+	// pitch
+	float sinr_cosp = 2 * (q.w * q.x + q.y * q.z);
+	float cosr_cosp = 1 - 2 * (q.x * q.x + q.y * q.y);
+	euler_angles.x = atan2f(sinr_cosp, cosr_cosp);
+	
+	// yaw
+	float sinp = 2 * (q.w * q.y - q.z * q.x);
+	if (fabsf(sinp) >= 1) {
+		euler_angles.y = copysignf(M_PI / 2, sinp); // use 90 degrees if out of range
+	} else {
+		euler_angles.y = asinf(sinp);
+	}
+	
+	// roll
+	float siny_cosp = 2 * (q.w * q.z + q.x * q.y);
+	float cosy_cosp = 1 - 2 * (q.y * q.y + q.z * q.z);
+	euler_angles.z = atan2f(siny_cosp, cosy_cosp);
+	
+	return euler_angles;
+}
+
+Plt_Vector3f plt_quaternion_rotate_vector(Plt_Quaternion q, Plt_Vector3f v) {
+	Plt_Vector3f uv, uuv;
+	Plt_Vector3f qv = {q.x, q.y, q.z};
+	uv = plt_vector3f_cross(qv, v);
+	uuv = plt_vector3f_cross(qv, uv);
+	
+	float qw2 = 2.0f * q.w;
+	uv = plt_vector3f_multiply(uv, (Plt_Vector3f){qw2, qw2, qw2});
+	uuv = plt_vector3f_multiply(uuv, (Plt_Vector3f){2.0f, 2.0f, 2.0f});
+	
+	return plt_vector3f_add(plt_vector3f_add(v, uv), uuv);
+}
+
+Plt_Matrix4x4f plt_quaternion_to_matrix(Plt_Quaternion q) {
+	Plt_Quaternion u = plt_quaternion_normalise(q);
+	
+	Plt_Matrix4x4f m = plt_matrix_identity();
+	
+	m.columns[0][0] = 1 - 2 * u.y * u.y - 2 * u.z * u.z;
+	m.columns[1][0] = 2 * u.x * u.y + 2 * u.w * u.z;
+	m.columns[2][0] = 2 * u.x * u.z - 2 * u.w * u.y;
+
+	m.columns[0][1] = 2 * u.x * u.y - 2 * u.w * u.z;
+	m.columns[1][1] = 1 - 2 * u.x * u.x - 2 * u.z * u.z;
+	m.columns[2][1] = 2 * u.y * u.z + 2 * u.w * u.x;
+
+	m.columns[0][2] = 2 * u.x * u.z + 2 * u.w * u.y;
+	m.columns[1][2] = 2 * u.y * u.z - 2 * u.w * u.x;
+	m.columns[2][2] = 1 - 2 * u.x * u.x - 2 * u.y * u.y;
+
+	return m;
 }

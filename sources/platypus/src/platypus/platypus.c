@@ -1,6 +1,7 @@
 #include "platypus/application/plt_application.c"
 #include "platypus/color/plt_color.c"
 #include "platypus/framebuffer/plt_framebuffer.c"
+#include "platypus/input/plt_input_state.c"
 #include "platypus/math/math.c"
 #include "platypus/mesh/plt_mesh.c"
 #include "platypus/mesh/plt_mesh_ply.c"

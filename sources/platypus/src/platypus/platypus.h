@@ -35,13 +35,15 @@ typedef struct Plt_Vector4f {
 	float x, y, z, w;
 } Plt_Vector4f;
 
+typedef Plt_Vector4f Plt_Quaternion;
+
 typedef struct Plt_Matrix4x4f {
 	float columns[4][4];
 } Plt_Matrix4x4f;
 
 typedef struct Plt_Transform {
 	Plt_Vector3f translation;
-	Plt_Vector3f rotation;
+	Plt_Quaternion rotation;
 	Plt_Vector3f scale;
 } Plt_Transform;
 
@@ -66,6 +68,8 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
 float plt_vector3f_dot_product(Plt_Vector3f a, Plt_Vector3f b);
 
+Plt_Vector3f plt_vector3f_cross(Plt_Vector3f a, Plt_Vector3f b);
+
 Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v);
 
 Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b);
@@ -73,6 +77,10 @@ Plt_Vector3f plt_vector3f_add(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
 
 Plt_Vector3f plt_vector3f_subtract(Plt_Vector3f a, Plt_Vector3f b);
+
+Plt_Vector2f plt_vector2f_multiply(Plt_Vector2f a, Plt_Vector2f b);
+Plt_Vector3f plt_vector3f_multiply(Plt_Vector3f a, Plt_Vector3f b);
+Plt_Vector4f plt_vector4f_multiply(Plt_Vector4f a, Plt_Vector4f b);
 
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b);
@@ -85,6 +93,15 @@ Plt_Vector3f plt_vector3f_lerp(Plt_Vector3f a, Plt_Vector3f b, float i);
 
 float plt_math_rad2deg(float rad);
 float plt_math_deg2rad(float deg);
+
+Plt_Quaternion plt_quaternion_create_from_euler(Plt_Vector3f euler_angles);
+Plt_Quaternion plt_quaternion_invert(Plt_Quaternion q);
+Plt_Quaternion plt_quaternion_normalise(Plt_Quaternion q);
+Plt_Quaternion plt_quaternion_add(Plt_Quaternion a, Plt_Quaternion b);
+Plt_Quaternion plt_quaternion_multiply(Plt_Quaternion a, Plt_Quaternion b);
+Plt_Vector3f plt_quaternion_to_euler(Plt_Quaternion q);
+Plt_Vector3f plt_quaternion_rotate_vector(Plt_Quaternion q, Plt_Vector3f v);
+Plt_Matrix4x4f plt_quaternion_to_matrix(Plt_Quaternion q);
 
 // MARK: Color
 
@@ -114,13 +131,19 @@ typedef struct Plt_Object {
 	void *type_data;
 } Plt_Object;
 
+typedef struct Plt_Input_State Plt_Input_State;
+typedef struct Plt_Frame_State {
+	float delta_time;
+	Plt_Input_State *input_state;
+} Plt_Frame_State;
+
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Object_Type_Descriptor {
 	Plt_Object_Type_ID id;
 	unsigned int data_size;
 
-	void (*update)(Plt_Object *object, void *type_data);
-	void (*render)(Plt_Object *object, void *type_data, Plt_Renderer *renderer);
+	void (*update)(Plt_Object *object, void *type_data, Plt_Frame_State state);
+	void (*render)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
 } Plt_Object_Type_Descriptor;
 
 Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
@@ -214,6 +237,49 @@ void plt_application_set_target_fps(Plt_Application *application, unsigned int f
 unsigned int plt_application_get_target_fps(Plt_Application *application);
 
 float plt_application_get_milliseconds_since_creation(Plt_Application *application);
+
+// MARK: Input
+
+typedef struct Plt_Input_State Plt_Input_State;
+
+typedef enum Plt_Key {
+	Plt_Key_None = 0,
+	Plt_Key_A = 1 << 0,
+	Plt_Key_B = 1 << 1,
+	Plt_Key_C = 1 << 2,
+	Plt_Key_D = 1 << 3,
+	Plt_Key_E = 1 << 4,
+	Plt_Key_F = 1 << 5,
+	Plt_Key_G = 1 << 6,
+	Plt_Key_H = 1 << 7,
+	Plt_Key_I = 1 << 8,
+	Plt_Key_J = 1 << 9,
+	Plt_Key_K = 1 << 10,
+	Plt_Key_L = 1 << 11,
+	Plt_Key_M = 1 << 12,
+	Plt_Key_N = 1 << 13,
+	Plt_Key_O = 1 << 14,
+	Plt_Key_P = 1 << 15,
+	Plt_Key_Q = 1 << 16,
+	Plt_Key_R = 1 << 17,
+	Plt_Key_S = 1 << 18,
+	Plt_Key_T = 1 << 19,
+	Plt_Key_U = 1 << 20,
+	Plt_Key_V = 1 << 21,
+	Plt_Key_W = 1 << 22,
+	Plt_Key_X = 1 << 23,
+	Plt_Key_Y = 1 << 24,
+	Plt_Key_Z = 1 << 25,
+	Plt_Key_Up = 1 << 26,
+	Plt_Key_Down = 1 << 27,
+	Plt_Key_Left = 1 << 28,
+	Plt_Key_Right = 1 << 29,
+	Plt_Key_Space = 1 << 30,
+	Plt_Key_Enter = 1 << 31,
+	Plt_Key_Escape = 1 << 32,
+} Plt_Key;
+
+Plt_Key plt_input_state_get_pressed_Keys(Plt_Input_State *state);
 
 // MARK: Mesh
 

@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-void _mesh_renderer_type_render(Plt_Object *object, void *type_data, Plt_Renderer *renderer) {
+void _mesh_renderer_type_render(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) {
 	Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = (Plt_Object_Type_Mesh_Renderer_Data *)type_data;
 	
 	if (!mesh_type_data->mesh) {
