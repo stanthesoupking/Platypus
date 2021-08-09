@@ -7,3 +7,6 @@ file(GLOB_RECURSE EXAMPLE_SRC "src/**.c")
 
 add_executable(spinning_platypus ${EXAMPLE_SRC})
 target_link_libraries(spinning_platypus platypus)
+
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
