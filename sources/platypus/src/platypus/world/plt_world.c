@@ -4,6 +4,7 @@
 #include <string.h>
 #include "platypus/base/macros.h"
 #include "plt_base_types.h"
+#include "platypus/renderer/plt_renderer.h"
 
 void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor descriptor);
 

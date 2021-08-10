@@ -155,6 +155,10 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object);
 Plt_Object *plt_object_get_parent(Plt_Object *object);
 Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object); 
 
+Plt_Vector3f plt_object_get_forward(Plt_Object *object);
+Plt_Vector3f plt_object_get_up(Plt_Object *object);
+Plt_Vector3f plt_object_get_right(Plt_Object *object);
+
 // MARK: Base Object Types
 
 #define PLT_BASE_TYPE_ID_OFFSET 512
@@ -280,6 +284,7 @@ typedef enum Plt_Key {
 } Plt_Key;
 
 Plt_Key plt_input_state_get_pressed_Keys(Plt_Input_State *state);
+Plt_Vector2f plt_input_state_get_mouse_movement(Plt_Input_State *state);
 
 // MARK: Mesh
 

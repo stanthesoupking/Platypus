@@ -29,18 +29,18 @@ typedef struct simd_float4 {
 	};
 } simd_float4;
 
-simd_float4 simd_float4_create(float x, float y, float z, float w);
-simd_float4 simd_float4_create_scalar(float v);
-simd_float4 simd_float4_load(float *p);
+static simd_float4 simd_float4_create(float x, float y, float z, float w);
+static simd_float4 simd_float4_create_scalar(float v);
+static simd_float4 simd_float4_load(float *p);
 
 // a + b
-simd_float4 simd_float4_add(simd_float4 a, simd_float4 b);
+static simd_float4 simd_float4_add(simd_float4 a, simd_float4 b);
 
 // a + b * c
-simd_float4 simd_float4_multiply_add(simd_float4 a, simd_float4 b, simd_float4 c);
+static simd_float4 simd_float4_multiply_add(simd_float4 a, simd_float4 b, simd_float4 c);
 
 // a[0] + a[1] + a[2] + a[3]
-float simd_float4_add_across(simd_float4 v);
+static float simd_float4_add_across(simd_float4 v);
 
 // MARK: Int
 
@@ -60,22 +60,22 @@ typedef struct simd_int4 {
 	};
 } simd_int4;
 
-simd_int4 simd_int4_create(int x, int y, int z, int w);
-simd_int4 simd_int4_create_scalar(int v);
-simd_int4 simd_int4_load(int *p);
+static simd_int4 simd_int4_create(int x, int y, int z, int w);
+static simd_int4 simd_int4_create_scalar(int v);
+static simd_int4 simd_int4_load(int *p);
 
-simd_int4 simd_int4_add(simd_int4 a, simd_int4 b);
-simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b);
-simd_int4 simd_int4_multiply(simd_int4 a, simd_int4 b);
+static simd_int4 simd_int4_add(simd_int4 a, simd_int4 b);
+static simd_int4 simd_int4_subtract(simd_int4 a, simd_int4 b);
+static simd_int4 simd_int4_multiply(simd_int4 a, simd_int4 b);
 
 // MARK: Implementation
 
 #ifdef PLT_PLATFORM_WINDOWS
 #define simd_inline __forceinline
 #elif PLT_PLATFORM_MACOS
-#define simd_inline inline __attribute__((always_inline))
+#define simd_inline static inline __attribute__((always_inline))
 #else
-#define simd_inline inline
+#define simd_inline static inline
 #endif
 
 simd_inline simd_float4 simd_float4_create(float x, float y, float z, float w) {

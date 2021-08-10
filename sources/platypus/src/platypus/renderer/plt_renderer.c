@@ -282,7 +282,10 @@ void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt
 }
 
 void plt_renderer_update_mvp(Plt_Renderer *renderer) {
-	renderer->mvp_matrix = plt_matrix_multiply(plt_matrix_multiply(renderer->projection_matrix, renderer->view_matrix), renderer->model_matrix);
+	// renderer->mvp_matrix = plt_matrix_multiply(plt_matrix_multiply(renderer->projection_matrix, renderer->view_matrix), renderer->model_matrix);
+	Plt_Matrix4x4f mv = plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix);
+
+	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, mv);
 }
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix) {

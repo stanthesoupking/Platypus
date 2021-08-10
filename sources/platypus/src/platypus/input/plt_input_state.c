@@ -56,3 +56,7 @@ Plt_Key plt_key_from_sdl_keycode(SDL_Keycode keycode) {
 		default: return Plt_Key_None;
 	}
 }
+
+Plt_Vector2f plt_input_state_get_mouse_movement(Plt_Input_State *state) {
+	return state->mouse_movement;
+}

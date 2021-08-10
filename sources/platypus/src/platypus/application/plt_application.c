@@ -57,6 +57,9 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	application->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
 	plt_assert(application->window, "SDL window creation failed.\n");
 
+	// SDL_CaptureMouse(SDL_TRUE);
+	SDL_SetRelativeMouseMode(SDL_TRUE);
+
 	application->should_quit = false;
 	application->framebuffer = (Plt_Framebuffer){
 		.pixels = NULL,
@@ -94,6 +97,7 @@ void plt_application_update(Plt_Application *application) {
 		.input_state = &application->input_state
 	};
 	
+	application->input_state.mouse_movement = (Plt_Vector2f){0, 0};
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
 		if (event.type == SDL_QUIT) {
@@ -102,6 +106,9 @@ void plt_application_update(Plt_Application *application) {
 			plt_input_state_set_key_down(&application->input_state, plt_key_from_sdl_keycode(event.key.keysym.sym));
 		} else if (event.type == SDL_KEYUP) {
 			plt_input_state_set_key_up(&application->input_state, plt_key_from_sdl_keycode(event.key.keysym.sym));
+		} else if (event.type == SDL_MOUSEMOTION) {
+			application->input_state.mouse_movement.x = event.motion.xrel;
+			application->input_state.mouse_movement.y = event.motion.yrel;
 		}
 	}
 

@@ -4,7 +4,11 @@
 
 Plt_Matrix4x4f plt_object_type_camera_get_view_matrix(Plt_Object *camera) {
 	// TODO: Assert that this is a camera object
-	return plt_matrix_invert(plt_object_get_model_matrix(camera));
+	Plt_Transform t = plt_object_get_parent(camera)->transform;
+	t.rotation = plt_quaternion_invert(t.rotation);
+	t.translation = plt_vector3f_multiply_scalar(t.translation, -1.0f);
+
+	return plt_matrix_multiply(plt_quaternion_to_matrix(t.rotation), plt_matrix_translate_make(t.translation));
 }
 
 Plt_Matrix4x4f plt_object_type_camera_get_projection_matrix(Plt_Object *camera, Plt_Vector2i viewport) {

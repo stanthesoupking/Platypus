@@ -2,8 +2,11 @@
 
 #include "platypus/platypus.h"
 
+#include "SDL.h"
+
 typedef struct Plt_Input_State {
 	long long pressed_keys;
+	Plt_Vector2f mouse_movement;
 } Plt_Input_State;
 
 void plt_input_state_initialise(Plt_Input_State *state);
