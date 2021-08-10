@@ -1,6 +1,7 @@
 #include "plt_triangle_processor.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef struct Plt_Triangle_Processor_Working_Buffer {
 	unsigned int triangle_capacity;
@@ -131,6 +132,7 @@ Plt_Triangle_Processor_Result plt_triangle_processor_process_vertex_data(Plt_Tri
 	}
 
 	// Input
+	float *clipspace_w = vertex_data.clipspace_w;
 	int *screen_positions_x = vertex_data.screen_positions_x;
 	int *screen_positions_y = vertex_data.screen_positions_y;
 
@@ -148,6 +150,11 @@ Plt_Triangle_Processor_Result plt_triangle_processor_process_vertex_data(Plt_Tri
 	for (unsigned int i = 0; i < triangle_count; ++i) {
 		unsigned int o = output_triangle_count;
 		unsigned int v = i * 3;
+
+		// Don't render triangles behind the camera
+		if ((clipspace_w[v] < 0) || (clipspace_w[v + 1] < 0) || (clipspace_w[v + 2] < 0)) {
+			continue;
+		}
 
 		// Bounding box calculations
 		Plt_Vector2i bounds_min;

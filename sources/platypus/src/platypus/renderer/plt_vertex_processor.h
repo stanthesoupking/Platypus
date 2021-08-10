@@ -9,6 +9,7 @@ typedef struct Plt_Vertex_Processor_Result {
 	float *clipspace_x;
 	float *clipspace_y;
 	float *clipspace_z;
+	float *clipspace_w;
 
 	int *screen_positions_x;
 	int *screen_positions_y;
