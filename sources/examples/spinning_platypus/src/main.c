@@ -2,60 +2,12 @@
 
 #include "platypus/platypus.h"
 
-#define Plt_Object_Type_Flying_Camera 1
-typedef struct Plt_Object_Type_Flying_Camera_Data {
-	float speed;
-
-	float pitch;
-	float yaw;
-} Plt_Object_Type_Flying_Camera_Data;
-
-void updateFlyingCamera(Plt_Object *object, void *type_data, Plt_Frame_State state) {
-	Plt_Object_Type_Flying_Camera_Data *data = (Plt_Object_Type_Flying_Camera_Data *)type_data;
-
-	Plt_Vector3f forwards = plt_object_get_forward(object);
-	Plt_Vector3f right = plt_object_get_right(object);
-
-	Plt_Key pressed = plt_input_state_get_pressed_Keys(state.input_state);
-	if (pressed & Plt_Key_W) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, data->speed * state.delta_time));
-	}
-	
-	if (pressed & Plt_Key_S) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, -data->speed * state.delta_time));
-	}
-	
-	if (pressed & Plt_Key_A) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, -data->speed * 0.25f * state.delta_time));
-	}
-	
-	if (pressed & Plt_Key_D) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, data->speed * 0.25f * state.delta_time));
-	}
-	
-	Plt_Vector2f mouse_movement = plt_input_state_get_mouse_movement(state.input_state);
-	data->yaw -= mouse_movement.x * 0.001f;
-	data->pitch += mouse_movement.y * 0.001f;
-	
-	// Prevent camera from becoming flipped
-	data->pitch = plt_clamp(data->pitch, -0.5f * PLT_PI, 0.5f * PLT_PI);
-
-	object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){data->pitch, data->yaw, 0});
-}
-
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	const unsigned int type_descriptor_count = 1;
-	Plt_Object_Type_Descriptor type_descriptors[] = {
-		{
-			.id = Plt_Object_Type_Flying_Camera,
-			.data_size = sizeof(Plt_Object_Type_Flying_Camera_Data),
-			.update = updateFlyingCamera,
-			.render = NULL
-		}
-	};
+	const unsigned int type_descriptor_count = 0;
+	Plt_Object_Type_Descriptor type_descriptors[1];
 	
 	Plt_World *world = plt_world_create(128, type_descriptors, type_descriptor_count);
 	plt_application_set_world(app, world);
@@ -83,17 +35,19 @@ int main(int argc, char **argv) {
 		mesh_type_data->texture = lava_texture;
 	}
 	
-	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Flying_Camera, "Flying Camera");
-	Plt_Object_Type_Flying_Camera_Data *flying_camera_type_data = flying_camera_object->type_data;
-	flying_camera_type_data->speed = 100.0f;
+	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Flying_Camera_Controller, "Flying Camera");
 	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 80.0f };
 	flying_camera_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ 0.0f, 0.0f, 0.0f });
+	{
+		Plt_Object_Type_Flying_Camera_Controller_Data *flying_camera_type_data = flying_camera_object->type_data;
+		flying_camera_type_data->speed = 100.0f;
+	}
 	
 	Plt_Object *camera_object = plt_world_create_object(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
 	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
-	camera_type_data->fov = plt_math_deg2rad(90.0f);
+	camera_type_data->fov = plt_math_deg2rad(150.0f);
 	camera_type_data->near_z = 0.1f;
-	camera_type_data->far_z = 500.0f;
+	camera_type_data->far_z = 100.0f;
 
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));

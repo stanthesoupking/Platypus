@@ -165,7 +165,9 @@ Plt_Vector3f plt_object_get_right(Plt_Object *object);
 const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
 const static Plt_Object_Type_ID Plt_Object_Type_Mesh_Renderer = PLT_BASE_TYPE_ID_OFFSET + 1;
 const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 2;
+const static Plt_Object_Type_ID Plt_Object_Type_Flying_Camera_Controller = PLT_BASE_TYPE_ID_OFFSET + 3;
 
+// Mesh Renderer
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;
 typedef struct Plt_Object_Type_Mesh_Renderer_Data {
@@ -174,6 +176,7 @@ typedef struct Plt_Object_Type_Mesh_Renderer_Data {
 	Plt_Color8 color;
 } Plt_Object_Type_Mesh_Renderer_Data;
 
+// Camera
 typedef struct Plt_Object_Type_Camera_Data {
 	// Vertical FOV in radians
 	float fov;
@@ -182,6 +185,14 @@ typedef struct Plt_Object_Type_Camera_Data {
 	float near_z;
 	float far_z;
 } Plt_Object_Type_Camera_Data;
+
+// Flying Camera Controller
+typedef struct Plt_Object_Type_Flying_Camera_Controller_Data {
+	float speed;
+
+	float pitch;
+	float yaw;
+} Plt_Object_Type_Flying_Camera_Controller_Data;
 
 // MARK: Renderer
 
@@ -222,7 +233,8 @@ Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer);
 // MARK: Application
 
 typedef enum Plt_Application_Option {
-	Plt_Application_Option_None = 0
+	Plt_Application_Option_None = 0,
+	Plt_Application_Option_Fullscreen = 1 << 0
 } Plt_Application_Option;
 
 typedef struct Plt_Application Plt_Application;

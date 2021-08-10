@@ -54,7 +54,13 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	if (SDL_Init(0)) {
 		plt_abort("Failed initialising SDL.\n");
 	}
-	application->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+	
+	Uint32 flags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+	if (options & Plt_Application_Option_Fullscreen) {
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+	}
+	
+	application->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 	plt_assert(application->window, "SDL window creation failed.\n");
 
 	// SDL_CaptureMouse(SDL_TRUE);
