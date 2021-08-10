@@ -164,7 +164,7 @@ Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform) {
 	Plt_Matrix4x4f translate = plt_matrix_translate_make(transform.translation);
 	Plt_Matrix4x4f rotate = plt_quaternion_to_matrix(transform.rotation);
 	Plt_Matrix4x4f scale = plt_matrix_scale_make(transform.scale);
-	return plt_matrix_multiply(plt_matrix_multiply(rotate, scale), translate);
+	return plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
 }
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
@@ -358,15 +358,15 @@ Plt_Matrix4x4f plt_quaternion_to_matrix(Plt_Quaternion q) {
 	Plt_Matrix4x4f m = plt_matrix_identity();
 	
 	m.columns[0][0] = 1 - 2 * u.y * u.y - 2 * u.z * u.z;
-	m.columns[1][0] = 2 * u.x * u.y + 2 * u.w * u.z;
-	m.columns[2][0] = 2 * u.x * u.z - 2 * u.w * u.y;
+	m.columns[0][1] = 2 * u.x * u.y + 2 * u.w * u.z;
+	m.columns[0][2] = 2 * u.x * u.z - 2 * u.w * u.y;
 
-	m.columns[0][1] = 2 * u.x * u.y - 2 * u.w * u.z;
+	m.columns[1][0] = 2 * u.x * u.y - 2 * u.w * u.z;
 	m.columns[1][1] = 1 - 2 * u.x * u.x - 2 * u.z * u.z;
-	m.columns[2][1] = 2 * u.y * u.z + 2 * u.w * u.x;
+	m.columns[1][2] = 2 * u.y * u.z + 2 * u.w * u.x;
 
-	m.columns[0][2] = 2 * u.x * u.z + 2 * u.w * u.y;
-	m.columns[1][2] = 2 * u.y * u.z - 2 * u.w * u.x;
+	m.columns[2][0] = 2 * u.x * u.z + 2 * u.w * u.y;
+	m.columns[2][1] = 2 * u.y * u.z - 2 * u.w * u.x;
 	m.columns[2][2] = 1 - 2 * u.x * u.x - 2 * u.y * u.y;
 
 	return m;
