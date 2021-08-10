@@ -1,8 +1,10 @@
-#include "plt_renderer.h"
+#include "platypus/renderer/plt_renderer.h"
 #include "plt_raster_function_helpers.h"
 #include "platypus/mesh/plt_mesh.h"
-#include "platypus/renderer/plt_vertex_processor.h"
-#include "platypus/renderer/plt_triangle_processor.h"
+#include "platypus/renderer/pipeline/plt_vertex_processor.h"
+#include "platypus/renderer/pipeline/plt_triangle_processor.h"
+#include "platypus/renderer/pipeline/plt_triangle_rasteriser.h"
+#include "platypus/base/macros.h"
 
 #ifndef RASTER_FUNC_NAME
 #error "Must supply RASTER_FUNC_NAME"
@@ -16,7 +18,8 @@
 #error "Must supply RASTER_LIGHTING_MODEL"
 #endif
 
-void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Processor_Result triangle_data, Plt_Renderer *renderer, Plt_Mesh *mesh) {
+void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Processor_Result triangle_data) {
+	Plt_Renderer *renderer = rasteriser->renderer;
 	Plt_Color8 *framebuffer_pixels = renderer->framebuffer.pixels;
 	float *depth_buffer = renderer->depth_buffer;
 	int framebuffer_width = renderer->framebuffer.width;
@@ -57,11 +60,19 @@ void RASTER_FUNC_NAME(Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Proc
 		Plt_Vector2i bounds_min = { triangle_data.bounds_min_x[i], triangle_data.bounds_min_y[i] };
 		Plt_Vector2i bounds_max = { triangle_data.bounds_max_x[i], triangle_data.bounds_max_y[i] };
 
+		// Bound triangle inside of region
+		bounds_min.x = plt_clamp(bounds_min.x, region.x, region.x + region.width);
+		bounds_min.y = plt_clamp(bounds_min.y, region.y, region.y + region.height);
+		bounds_max.x = plt_clamp(bounds_max.x, region.x, region.x + region.width);
+		bounds_max.y = plt_clamp(bounds_max.y, region.y, region.y + region.height);
+
 		simd_int4 c_increment_x = triangle_data.c_increment_x[i];
 		simd_int4 c_increment_y = triangle_data.c_increment_y[i];
 		
 		// Half-space triangle rasterization
 		simd_int4 cy = triangle_data.c_initial[i];
+		cy = simd_int4_add(cy, simd_int4_multiply(c_increment_y, simd_int4_create_scalar(bounds_min.y)));
+		cy = simd_int4_add(cy, simd_int4_multiply(c_increment_x, simd_int4_create_scalar(bounds_min.x)));
 		for (int y = bounds_min.y; y < bounds_max.y; ++y) {
 			simd_int4 cx = cy;
 			for (int x = bounds_min.x; x < bounds_max.x; ++x) {

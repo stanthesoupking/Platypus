@@ -11,6 +11,14 @@
 
 #define PLT_PI 3.1415926535897932384626f
 
+typedef struct Plt_Rect {
+	int x, y, width, height;
+} Plt_Rect;
+
+typedef struct Plt_Size {
+	unsigned int width, height;
+} Plt_Size;
+
 typedef struct Plt_Vector2i {
 	int x, y;
 } Plt_Vector2i;

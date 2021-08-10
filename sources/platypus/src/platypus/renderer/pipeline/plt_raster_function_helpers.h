@@ -1,6 +1,6 @@
 #pragma once
 
-#include "plt_renderer.h"
+#include "platypus/renderer/plt_renderer.h"
 
 static inline float plt_renderer_perpendicular_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y - a.y * b.x;

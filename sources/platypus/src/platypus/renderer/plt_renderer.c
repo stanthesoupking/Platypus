@@ -5,8 +5,9 @@
 #include "platypus/base/macros.h"
 #include "platypus/base/platform.h"
 #include "platypus/mesh/plt_mesh.h"
-#include "plt_vertex_processor.h"
-#include "plt_triangle_processor.h"
+#include "platypus/renderer/pipeline/plt_vertex_processor.h"
+#include "platypus/renderer/pipeline/plt_triangle_processor.h"
+#include "platypus/renderer/pipeline/plt_triangle_rasteriser.h"
 
 Plt_Vector2i plt_renderer_clipspace_to_pixel(Plt_Renderer *renderer, Plt_Vector2f p);
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color);
@@ -23,6 +24,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 
 	renderer->vertex_processor = plt_vertex_processor_create();
 	renderer->triangle_processor = plt_triangle_processor_create();
+	renderer->triangle_rasteriser = plt_triangle_rasteriser_create(renderer, (Plt_Size){ framebuffer.width, framebuffer.height });
 	
 	renderer->model_matrix =
 	renderer->view_matrix =
@@ -63,6 +65,7 @@ void plt_renderer_destroy(Plt_Renderer **renderer) {
 
 void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer framebuffer) {
 	renderer->framebuffer = framebuffer;
+	plt_triangle_rasteriser_update_framebuffer(renderer->triangle_rasteriser, framebuffer);
 	
 	if ((renderer->depth_buffer_width != framebuffer.width) || (renderer->depth_buffer_height != framebuffer.height)) {
 		if (renderer->depth_buffer) {
@@ -71,6 +74,8 @@ void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer fra
 		renderer->depth_buffer = malloc(sizeof(float) * framebuffer.width * framebuffer.height);
 		renderer->depth_buffer_width = framebuffer.width;
 		renderer->depth_buffer_height = framebuffer.height;
+
+		plt_triangle_rasteriser_update_depth_buffer(renderer->triangle_rasteriser, renderer->depth_buffer);
 	}
 }
 
@@ -124,40 +129,6 @@ void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	// TODO: Implement line rendering
 }
 
-// Define rasterisation functions:
-
-#define RASTER_FUNC_NAME _draw_triangle_textured_unlit
-#define RASTER_TEXTURED 1
-#define RASTER_LIGHTING_MODEL 0
-#include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
-
-#define RASTER_FUNC_NAME _draw_triangle_textured_lit
-#define RASTER_TEXTURED 1
-#define RASTER_LIGHTING_MODEL 1
-#include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
-
-#define RASTER_FUNC_NAME _draw_triangle_untextured_unlit
-#define RASTER_TEXTURED 0
-#define RASTER_LIGHTING_MODEL 0
-#include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
-
-#define RASTER_FUNC_NAME _draw_triangle_untextured_lit
-#define RASTER_TEXTURED 0
-#define RASTER_LIGHTING_MODEL 1
-#include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
-
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	plt_timer_start(draw_mesh_timer);
 
@@ -171,23 +142,12 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	// Process triangles
 	plt_timer_start(tp_timer)
 	Plt_Triangle_Processor_Result tp_result = plt_triangle_processor_process_vertex_data(renderer->triangle_processor, viewport, vp_result);
-	plt_timer_end(vp_timer, "TRIANGLE_PROCESSOR")
+	plt_timer_end(tp_timer, "TRIANGLE_PROCESSOR")
 
-	plt_timer_start(rasterize_triangle_timer)
-	if (renderer->bound_texture) {
-		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_textured_unlit(vp_result, tp_result, renderer, mesh);
-		} else {
-			_draw_triangle_textured_lit(vp_result, tp_result, renderer, mesh);
-		}
-	} else {
-		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_untextured_unlit(vp_result, tp_result, renderer, mesh);
-		} else {
-			_draw_triangle_untextured_lit(vp_result, tp_result, renderer, mesh);
-		}
-	}
-	plt_timer_end(rasterize_triangle_timer, "RASTERIZE_TRIANGLE");
+	// Rasterise triangles
+	plt_timer_start(tr_timer)
+	plt_triangle_rasteriser_render_triangles(renderer->triangle_rasteriser, tp_result, vp_result);
+	plt_timer_end(tr_timer, "TRIANGLE_RASTERISER")
 	
 	plt_timer_end(draw_mesh_timer, "DRAW_MESH");
 }

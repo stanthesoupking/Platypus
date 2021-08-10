@@ -200,7 +200,8 @@ Plt_Triangle_Processor_Result plt_triangle_processor_process_vertex_data(Plt_Tri
 		bounds_max_y[o] = bounds_max.y;
 		
 		// Barycentric calculations
-		c_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(bounds_min.x), simd_int4_create_scalar(bounds_min.y));
+		//c_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(bounds_min.x), simd_int4_create_scalar(bounds_min.y));
+		c_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(0), simd_int4_create_scalar(0));
 		
 		simd_int4 c_increment_x_result, c_increment_y_result;
 		plt_triangle_processor_get_c_increment(a_x, a_y, b_x, b_y, &c_increment_x_result, &c_increment_y_result);

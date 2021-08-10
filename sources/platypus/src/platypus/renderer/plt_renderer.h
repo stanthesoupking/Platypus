@@ -4,12 +4,14 @@
 
 typedef struct Plt_Vertex_Processor Plt_Vertex_Processor;
 typedef struct Plt_Triangle_Processor Plt_Triangle_Processor;
+typedef struct Plt_Triangle_Rasteriser Plt_Triangle_Rasteriser;
 typedef struct Plt_Renderer {
 	Plt_Application *application;
 	Plt_Framebuffer framebuffer;
 
 	Plt_Vertex_Processor *vertex_processor;
 	Plt_Triangle_Processor *triangle_processor;
+	Plt_Triangle_Rasteriser *triangle_rasteriser;
 	
 	float *depth_buffer;
 	unsigned int depth_buffer_width;
