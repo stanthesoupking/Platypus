@@ -32,6 +32,7 @@ void plt_triangle_rasteriser_destroy(Plt_Triangle_Rasteriser **rasteriser) {
 
 void plt_triangle_rasteriser_update_framebuffer(Plt_Triangle_Rasteriser *rasteriser, Plt_Framebuffer framebuffer) {
 	rasteriser->framebuffer = framebuffer;
+	rasteriser->viewport_size = (Plt_Size){ framebuffer.width, framebuffer.height };
 }
 
 void plt_triangle_rasteriser_update_depth_buffer(Plt_Triangle_Rasteriser *rasteriser, float *depth_buffer) {
