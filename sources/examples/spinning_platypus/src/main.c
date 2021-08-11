@@ -65,8 +65,8 @@ int main(int argc, char **argv) {
 	camera_type_data->far_z = 100.0f;
 
 	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
-	plt_renderer_set_ambient_lighting_color(renderer, plt_color8_make(30, 50, 40, 255));
-	plt_renderer_set_directional_lighting_color(renderer, plt_color8_make(255, 200, 200, 255));
+	plt_renderer_set_ambient_lighting(renderer, (Plt_Vector3f){ 0.4f, 0.3f, 0.3f });
+	plt_renderer_set_directional_lighting(renderer, (Plt_Vector3f){ 1.0f, 0.78f, 0.78f });
 	plt_renderer_set_directional_lighting_direction(renderer, (Plt_Vector3f){-0.3f,-1.0f,0.1f});
 	
 	float frame_time_accumulator = 0.0f;

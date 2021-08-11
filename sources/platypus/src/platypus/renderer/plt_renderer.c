@@ -36,9 +36,9 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->lighting_model = Plt_Lighting_Model_Unlit;
 	renderer->render_color = plt_color8_make(255,255,255,255);
 
-	renderer->ambient_lighting_color = plt_color8_make(40, 40, 40, 255);
-	renderer->directional_lighting_color = plt_color8_make(255, 255, 255, 255);
-	renderer->directional_lighting_direction = (Plt_Vector3f){0,-1.0f,0};
+	renderer->ambient_lighting = (Plt_Vector3f){ 0.16f, 0.16f, 0.16f };
+	renderer->directional_lighting = (Plt_Vector3f){ 1.0f, 1.0f, 1.0f };
+	renderer->directional_lighting_direction = (Plt_Vector3f){ 0.0f, -1.0f, 0.0f };
 	
 	renderer->bound_texture = NULL;
 	
@@ -229,12 +229,12 @@ void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
 	renderer->bound_texture = texture;
 }
 
-void plt_renderer_set_ambient_lighting_color(Plt_Renderer *renderer, Plt_Color8 color) {
-	renderer->ambient_lighting_color = color;
+void plt_renderer_set_ambient_lighting(Plt_Renderer *renderer, Plt_Vector3f value) {
+	renderer->ambient_lighting = value;
 }
 
-void plt_renderer_set_directional_lighting_color(Plt_Renderer *renderer, Plt_Color8 color) {
-	renderer->directional_lighting_color = color;
+void plt_renderer_set_directional_lighting(Plt_Renderer *renderer, Plt_Vector3f value) {
+	renderer->directional_lighting = value;
 }
 
 void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt_Vector3f direction) {

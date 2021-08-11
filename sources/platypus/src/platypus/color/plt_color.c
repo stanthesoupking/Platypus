@@ -13,6 +13,15 @@ Plt_Color8 plt_color8_add(Plt_Color8 a, Plt_Color8 b) {
 	};
 }
 
+Plt_Color8 plt_color8_multiply_vector3f(Plt_Color8 a, Plt_Vector3f b) {
+	return (Plt_Color8){
+		plt_clamp(((float)a.b * b.z), 0, 255),
+		plt_clamp(((float)a.g * b.y), 0, 255),
+		plt_clamp(((float)a.r * b.x), 0, 255),
+		a.a
+	};
+}
+
 Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b) {
 	return (Plt_Color8){
 		(a.b * b.b) / 255,

@@ -55,7 +55,7 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsi
 		Plt_Vector3f normals[3];
 		
 		#if RASTER_LIGHTING_MODEL == 1
-		Plt_Color8 lighting[3];
+		Plt_Vector3f lighting[3];
 		#endif
 		
 		for (unsigned int j = 0; j < 3; ++j) {
@@ -63,9 +63,9 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsi
 			normals[j] = (Plt_Vector3f){ vertex_data.world_normals_x[v + j], vertex_data.world_normals_y[v + j], vertex_data.world_normals_z[v + j] };
 			
 			float light_amount = plt_max(plt_vector3f_dot_product(normals[j], normalized_light_direction), 0);
-			Plt_Color8 directional_lighting = plt_color8_multiply_scalar(renderer->directional_lighting_color, light_amount);
+			Plt_Vector3f directional_lighting = plt_vector3f_multiply_scalar(renderer->directional_lighting, light_amount);
 
-			lighting[j] = plt_color8_add(directional_lighting, renderer->ambient_lighting_color);
+			lighting[j] = plt_vector3f_add(directional_lighting, renderer->ambient_lighting);
 			#endif
 			
 			pos[j] = (Plt_Vector3f){ vertex_data.clipspace_x[v + j], vertex_data.clipspace_y[v + j], vertex_data.clipspace_z[v + j] };
@@ -118,10 +118,10 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsi
 					depth_buffer[framebuffer_pixel_index] = depth;
 					
 					#if RASTER_LIGHTING_MODEL == 1
-					Plt_Color8 pixel_lighting = {0, 0, 0, 0};
-					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[0], weights.x));
-					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[1], weights.y));
-					pixel_lighting = plt_color8_add(pixel_lighting, plt_color8_multiply_scalar(lighting[2], weights.z));
+					Plt_Vector3f pixel_lighting = {0.0f, 0.0f, 0.0f};
+					pixel_lighting = plt_vector3f_add(pixel_lighting, plt_vector3f_multiply_scalar(lighting[0], weights.x));
+					pixel_lighting = plt_vector3f_add(pixel_lighting, plt_vector3f_multiply_scalar(lighting[1], weights.y));
+					pixel_lighting = plt_vector3f_add(pixel_lighting, plt_vector3f_multiply_scalar(lighting[2], weights.z));
 					#endif
 					
 					Plt_Color8 tex_color;
@@ -140,7 +140,7 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsi
 					#endif
 					
 					#if RASTER_LIGHTING_MODEL == 1
-						tex_color = plt_color8_multiply(tex_color, pixel_lighting);
+						tex_color = plt_color8_multiply_vector3f(tex_color, pixel_lighting);
 					#endif
 					
 					framebuffer_pixels[framebuffer_pixel_index] = tex_color;

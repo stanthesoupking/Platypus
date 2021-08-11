@@ -22,8 +22,8 @@ typedef struct Plt_Renderer {
 	Plt_Lighting_Model lighting_model;
 	Plt_Color8 render_color;
 
-	Plt_Color8 ambient_lighting_color;
-	Plt_Color8 directional_lighting_color;
+	Plt_Vector3f ambient_lighting;
+	Plt_Vector3f directional_lighting;
 	Plt_Vector3f directional_lighting_direction;
 	
 	Plt_Texture *bound_texture;
