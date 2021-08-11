@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "platform.h"
+#include "plt_defines.h"
 
 #if PLT_PLATFORM_WINDOWS
 #include <time.h>
@@ -45,14 +46,19 @@ static inline double plt_get_millis() {
 #endif
 }
 
-static int _plt_timer_depth = 0;
+#if PLT_DEBUG_TIMERS
+	static int _plt_timer_depth = 0;
 
-#define plt_timer_start(timer_name) \
-_plt_timer_depth++; \
-double timer_name = plt_get_millis();
+	#define plt_timer_start(timer_name) \
+	_plt_timer_depth++; \
+	double timer_name = plt_get_millis();
 
-#define plt_timer_end(timer_name, string_name) \
-_plt_timer_depth--; \
-for (int i = 0; i < _plt_timer_depth; ++i) { printf("  "); } \
-if (_plt_timer_depth > 0) { printf("- "); }\
-printf("%s completed in %.2lfms\n", string_name, plt_get_millis() - timer_name);
+	#define plt_timer_end(timer_name, string_name) \
+	_plt_timer_depth--; \
+	for (int i = 0; i < _plt_timer_depth; ++i) { printf("  "); } \
+	if (_plt_timer_depth > 0) { printf("- "); }\
+	printf("%s completed in %.2lfms\n", string_name, plt_get_millis() - timer_name);
+#else
+	#define plt_timer_start(timer_name)
+	#define plt_timer_end(timer_name, string_name)
+#endif

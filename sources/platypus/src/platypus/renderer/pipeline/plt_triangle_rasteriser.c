@@ -2,6 +2,7 @@
 
 #include "platypus/base/thread/plt_thread.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
+#include "platypus/base/plt_defines.h"
 
 typedef struct Plt_Triangle_Rasteriser {
 	Plt_Renderer *renderer;
@@ -78,9 +79,10 @@ void *_raster_thread(void *thread_data) {
 	Plt_Triangle_Rasteriser_Thread_Data *data = thread_data;
 	Plt_Renderer *renderer = data->rasteriser->renderer;
 
-	// Uncomment to output colour based on thread ID
-	// _draw_triangle_debug_thread_id(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
-	// return NULL;
+#if PLT_DEBUG_RASTER_THREAD_ID
+	_draw_triangle_debug_thread_id(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
+	return NULL;
+#endif
 
 	if (renderer->bound_texture) {
 		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
