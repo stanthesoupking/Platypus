@@ -13,6 +13,20 @@ typedef struct Plt_Thread {
 #endif
 } Plt_Thread;
 
+typedef struct Plt_Thread_Pool_Private_Data Plt_Thread_Pool_Private_Data;
+typedef struct Plt_Thread_Pool {
+	unsigned int thread_count;
+	Plt_Thread **threads;
+	void *thread_data;
+	void *(*thread_func)(unsigned int thread_id, void *thread_data);
+	Plt_Thread_Pool_Private_Data *thread_private_data;
+
+	Plt_Thread_Signal *data_ready_signal;
+	
+	Plt_Thread_Mutex *completed_thread_mutex;
+	unsigned int completed_thread_count;
+} Plt_Thread_Pool;
+
 typedef struct Plt_Thread_Signal {
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_t pmutex;
@@ -57,6 +71,73 @@ void plt_thread_wait_for_signal(Plt_Thread_Signal *signal) {
 	pthread_cond_wait(&signal->pcond, &signal->pmutex);
 	pthread_mutex_unlock(&signal->pmutex);
 #endif
+}
+
+typedef struct Plt_Thread_Pool_Private_Data {
+	Plt_Thread_Pool *pool;
+	unsigned int thread_id;
+} Plt_Thread_Pool_Private_Data;
+
+void *_thread_pool_func(void *thread_data) {
+	Plt_Thread_Pool_Private_Data *data = thread_data;
+	Plt_Thread_Pool *pool = data->pool;
+		
+	while (true) {
+		plt_thread_wait_for_signal(pool->data_ready_signal);
+
+		pool->thread_func(data->thread_id, pool->thread_data);
+		
+		plt_thread_mutex_lock(pool->completed_thread_mutex);
+		pool->completed_thread_count++;
+		plt_thread_mutex_unlock(pool->completed_thread_mutex);
+	}
+
+	return NULL;
+}
+
+Plt_Thread_Pool *plt_thread_pool_create(void *(*func)(unsigned int thread_id, void *thread_data), void *thread_data, unsigned int thread_count) {
+	Plt_Thread_Pool *pool = malloc(sizeof(Plt_Thread_Pool));
+
+	pool->thread_count = thread_count;
+	pool->thread_data = thread_data;
+	
+	pool->data_ready_signal = plt_thread_signal_create();
+	pool->completed_thread_mutex = plt_thread_mutex_create();
+
+	pool->thread_func = func;
+	pool->threads = malloc(sizeof(Plt_Thread *) * thread_count);
+	pool->thread_private_data = malloc(sizeof(Plt_Thread_Pool_Private_Data) * thread_count);
+	for (unsigned int i = 0; i < thread_count; ++i) {
+		pool->thread_private_data[i].pool = pool;
+		pool->thread_private_data[i].thread_id = i;
+		pool->threads[i] = plt_thread_create(_thread_pool_func, pool->thread_private_data + i);
+	}
+
+	return pool;
+}
+
+void plt_thread_pool_destroy(Plt_Thread_Pool **pool) {
+	for (unsigned int i = 0; i < (*pool)->thread_count; ++i) {
+		plt_thread_destroy(&(*pool)->threads[i]);
+	}
+	plt_thread_mutex_destroy(&(*pool)->completed_thread_mutex);
+	plt_thread_signal_destroy(&(*pool)->data_ready_signal);
+
+	free((*pool)->threads);
+	free((*pool)->thread_private_data);
+	free(*pool);
+	*pool = NULL;
+}
+
+void plt_thread_pool_signal_data_ready(Plt_Thread_Pool *pool) {
+	pool->completed_thread_count = 0;
+	plt_thread_signal_broadcast(pool->data_ready_signal);
+}
+
+void plt_thread_pool_wait_until_complete(Plt_Thread_Pool *pool) {
+	while (pool->completed_thread_count < pool->thread_count) {
+		usleep(100);
+	}
 }
 
 Plt_Thread_Signal *plt_thread_signal_create() {
