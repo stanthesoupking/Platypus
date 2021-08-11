@@ -70,6 +70,9 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 
 Plt_Transform plt_transform_invert(Plt_Transform transform);
 Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform);
+Plt_Transform plt_transform_translate(Plt_Transform transform, Plt_Vector3f translation);
+Plt_Transform plt_transform_rotate(Plt_Transform transform, Plt_Quaternion rotation);
+Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale);
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
@@ -141,7 +144,12 @@ typedef struct Plt_Object {
 
 typedef struct Plt_Input_State Plt_Input_State;
 typedef struct Plt_Frame_State {
+	// Time since last update (milliseconds)
 	float delta_time;
+
+	// Time since appliation was started (milliseconds)
+	float application_time;
+	
 	Plt_Input_State *input_state;
 } Plt_Frame_State;
 

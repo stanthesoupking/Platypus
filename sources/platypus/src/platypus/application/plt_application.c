@@ -100,6 +100,7 @@ bool plt_application_should_close(Plt_Application *application) {
 void plt_application_update(Plt_Application *application) {
 	Plt_Frame_State frame_state = {
 		.delta_time = 0.01f, // TODO: get delta time
+		.application_time = plt_application_get_milliseconds_since_creation(application),
 		.input_state = &application->input_state
 	};
 	

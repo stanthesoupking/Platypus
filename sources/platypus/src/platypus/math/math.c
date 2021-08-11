@@ -167,6 +167,21 @@ Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform) {
 	return plt_matrix_multiply(translate, plt_matrix_multiply(rotate, scale));
 }
 
+Plt_Transform plt_transform_translate(Plt_Transform transform, Plt_Vector3f translation) {
+	transform.translation = plt_vector3f_add(transform.translation, translation);
+	return transform;
+}
+
+Plt_Transform plt_transform_rotate(Plt_Transform transform, Plt_Quaternion rotation) {
+	transform.rotation = plt_quaternion_multiply(transform.rotation, rotation);
+	return transform;
+}
+
+Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale) {
+	transform.scale = plt_vector3f_multiply(transform.scale, scale);
+	return transform;
+}
+
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
 	simd_float4 va = simd_float4_create(v.x, v.y, v.z, v.w);
 	

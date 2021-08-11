@@ -1,13 +1,27 @@
 #include <stdio.h>
 
 #include "platypus/platypus.h"
+#include <math.h>
+
+#define Plt_Object_Type_Spinning_Weapon 1
+void _spinning_weapon(Plt_Object *object, void *type_data, Plt_Frame_State state) {
+	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 1.0f * state.delta_time, 0}));
+	object->transform.translation.y += sinf(state.application_time * 0.005f) * 0.02f;
+}
 
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	const unsigned int type_descriptor_count = 0;
-	Plt_Object_Type_Descriptor type_descriptors[1];
+	const unsigned int type_descriptor_count = 1;
+	Plt_Object_Type_Descriptor type_descriptors[1] = {
+		{ // Spinning Weapon
+			.id = Plt_Object_Type_Spinning_Weapon,
+			.data_size = 0,
+			.update = _spinning_weapon,
+			.render = NULL
+		}
+	};
 	
 	Plt_World *world = plt_world_create(128, type_descriptors, type_descriptor_count);
 	plt_application_set_world(app, world);
@@ -17,7 +31,9 @@ int main(int argc, char **argv) {
 	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/gun.ply");
 	Plt_Texture *platypus_texture = plt_texture_load("assets/gun.png");
 
-	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_None, "Platypus");
+	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_Spinning_Weapon, "Platypus");
+	platypus_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, 0, 0 });
+	platypus_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
 
 	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, platypus_object, Plt_Object_Type_Mesh_Renderer, "Mesh");
 	{
@@ -36,8 +52,7 @@ int main(int argc, char **argv) {
 	}
 	
 	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Flying_Camera_Controller, "Flying Camera");
-	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 80.0f };
-	flying_camera_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ 0.0f, 0.0f, 0.0f });
+	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, -1.0f, 10.0f };
 	{
 		Plt_Object_Type_Flying_Camera_Controller_Data *flying_camera_type_data = flying_camera_object->type_data;
 		flying_camera_type_data->speed = 100.0f;
@@ -54,26 +69,12 @@ int main(int argc, char **argv) {
 	plt_renderer_set_directional_lighting_color(renderer, plt_color8_make(255, 200, 200, 255));
 	plt_renderer_set_directional_lighting_direction(renderer, (Plt_Vector3f){-0.3f,-1.0f,0.1f});
 	
-	float r = 0.0f;
-
 	float frame_time_accumulator = 0.0f;
 	float average_frame_time = 0.0f;
 	unsigned int total_frames = 0;
 
-	float prev_frame = plt_application_get_milliseconds_since_creation(app);
-
 	while (!plt_application_should_close(app)) {
-		float new_frame_time = plt_application_get_milliseconds_since_creation(app);
-		float delta_time = plt_max(new_frame_time - prev_frame, 0);
-		prev_frame = new_frame_time;
-		r += 0.0005f * delta_time;
-		
 		float start = plt_application_get_milliseconds_since_creation(app);
-		
-		// Render
-		platypus_object->transform.translation = (Plt_Vector3f){ 0.0f, 0.0f, 0.0f };
-		platypus_object->transform.rotation =  plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, r - 3.0f, 0 });
-		platypus_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
 
 		plt_application_update(app);
 
