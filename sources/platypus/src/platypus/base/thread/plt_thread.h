@@ -23,7 +23,7 @@ void plt_thread_pool_signal_data_ready(Plt_Thread_Pool *pool);
 void plt_thread_pool_wait_until_complete(Plt_Thread_Pool *pool);
 
 // Signal
-Plt_Thread_Signal *plt_thread_signal_create();
+Plt_Thread_Signal *plt_thread_signal_create(unsigned int thread_count);
 void plt_thread_signal_destroy(Plt_Thread_Signal **signal);
 
 void plt_thread_signal_emit(Plt_Thread_Signal *signal);

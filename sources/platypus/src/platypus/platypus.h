@@ -56,7 +56,6 @@ typedef struct Plt_Transform {
 } Plt_Transform;
 
 // Values defined in row-major format
-Plt_Matrix4x4f plt_matrix_create(float v[4][4]);
 Plt_Matrix4x4f plt_matrix_identity();
 Plt_Matrix4x4f plt_matrix_zero();
 Plt_Matrix4x4f plt_matrix_multiply(Plt_Matrix4x4f a, Plt_Matrix4x4f b);

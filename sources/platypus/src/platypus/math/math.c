@@ -341,7 +341,7 @@ Plt_Vector3f plt_quaternion_to_euler(Plt_Quaternion q) {
 	// yaw
 	float sinp = 2 * (q.w * q.y - q.z * q.x);
 	if (fabsf(sinp) >= 1) {
-		euler_angles.y = copysignf(M_PI / 2, sinp); // use 90 degrees if out of range
+		euler_angles.y = copysignf(PLT_PI / 2, sinp); // use 90 degrees if out of range
 	} else {
 		euler_angles.y = asinf(sinp);
 	}

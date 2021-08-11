@@ -1,15 +1,20 @@
 #include "plt_thread.h"
 
 #include "platypus/base/platform.h"
+#include "platypus/base/macros.h"
 #include <stdlib.h>
 
 #if PLT_PLATFORM_UNIX
 #include <pthread.h>
+#elif PLT_PLATFORM_WINDOWS
+#include <windows.h>
 #endif
 
 typedef struct Plt_Thread {
 #if PLT_PLATFORM_UNIX
 	pthread_t pthread;
+#elif PLT_PLATFORM_WINDOWS
+	HANDLE wthread;
 #endif
 } Plt_Thread;
 
@@ -28,15 +33,21 @@ typedef struct Plt_Thread_Pool {
 } Plt_Thread_Pool;
 
 typedef struct Plt_Thread_Signal {
+	unsigned int thread_count;
+
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_t pmutex;
 	pthread_cond_t pcond;
+#elif PLT_PLATFORM_WINDOWS
+	HANDLE wsemaphore;
 #endif
 } Plt_Thread_Signal;
 
 typedef struct Plt_Thread_Mutex {
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_t pmutex;
+#elif PLT_PLATFORM_WINDOWS
+	HANDLE wmutex;
 #endif
 } Plt_Thread_Mutex;
 
@@ -45,6 +56,8 @@ Plt_Thread *plt_thread_create(void *(*func)(void *thread_data), void *thread_dat
 
 #if PLT_PLATFORM_UNIX
 	pthread_create(&thread->pthread, NULL, func, thread_data);
+#elif PLT_PLATFORM_WINDOWS
+	thread->wthread = CreateThread(NULL, 0, func, thread_data, 0, NULL);
 #endif
 
 	return thread;
@@ -53,6 +66,8 @@ Plt_Thread *plt_thread_create(void *(*func)(void *thread_data), void *thread_dat
 void plt_thread_destroy(Plt_Thread **thread) {
 #if PLT_PLATFORM_UNIX
 	pthread_cancel((*thread)->pthread);
+#elif PLT_PLATFORM_WINDOWS
+	TerminateThread((*thread)->wthread, 0);
 #endif
 
 	free(*thread);
@@ -62,6 +77,8 @@ void plt_thread_destroy(Plt_Thread **thread) {
 void plt_thread_wait_until_complete(Plt_Thread *thread) {
 #if PLT_PLATFORM_UNIX
 	pthread_join(thread->pthread, NULL);
+#elif PLT_PLATFORM_WINDOWS
+	WaitForSingleObject(thread->wthread, INFINITE);
 #endif
 }
 
@@ -70,6 +87,8 @@ void plt_thread_wait_for_signal(Plt_Thread_Signal *signal) {
 	pthread_mutex_lock(&signal->pmutex);
 	pthread_cond_wait(&signal->pcond, &signal->pmutex);
 	pthread_mutex_unlock(&signal->pmutex);
+#elif PLT_PLATFORM_WINDOWS
+	WaitForSingleObject(signal->wsemaphore, INFINITE);
 #endif
 }
 
@@ -101,7 +120,7 @@ Plt_Thread_Pool *plt_thread_pool_create(void *(*func)(unsigned int thread_id, vo
 	pool->thread_count = thread_count;
 	pool->thread_data = thread_data;
 	
-	pool->data_ready_signal = plt_thread_signal_create();
+	pool->data_ready_signal = plt_thread_signal_create(thread_count);
 	pool->completed_thread_mutex = plt_thread_mutex_create();
 
 	pool->thread_func = func;
@@ -136,16 +155,25 @@ void plt_thread_pool_signal_data_ready(Plt_Thread_Pool *pool) {
 
 void plt_thread_pool_wait_until_complete(Plt_Thread_Pool *pool) {
 	while (pool->completed_thread_count < pool->thread_count) {
+#if PLT_PLATFORM_UNIX
 		usleep(100);
+#elif PLT_PLATFORM_WINDOWS
+		Sleep(0);
+#endif
 	}
 }
 
-Plt_Thread_Signal *plt_thread_signal_create() {
+Plt_Thread_Signal *plt_thread_signal_create(unsigned int thread_count) {
 	Plt_Thread_Signal *signal = malloc(sizeof(Plt_Thread_Signal));
+
+	signal->thread_count = thread_count;
 
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_init(&signal->pmutex, NULL);
 	pthread_cond_init(&signal->pcond, NULL);
+#elif PLT_PLATFORM_WINDOWS
+	signal->wsemaphore = CreateSemaphore(NULL, 0, thread_count, "semaphore");
+	plt_assert(signal->wsemaphore, "Failed creating semaphore.\n");
 #endif
 
 	return signal;
@@ -163,12 +191,18 @@ void plt_thread_signal_destroy(Plt_Thread_Signal **signal) {
 void plt_thread_signal_emit(Plt_Thread_Signal *signal) {
 #if PLT_PLATFORM_UNIX
 	pthread_cond_signal(&signal->pcond);
+#elif PLT_PLATFORM_WINDOWS
+	BOOL success = ReleaseSemaphore(signal->wsemaphore, 1, 0);
+	plt_assert(success, "Failed releasing semaphore.\n");
 #endif
 }
 
 void plt_thread_signal_broadcast(Plt_Thread_Signal *signal) {
 #if PLT_PLATFORM_UNIX
 	pthread_cond_broadcast(&signal->pcond);
+#elif PLT_PLATFORM_WINDOWS
+	BOOL success = ReleaseSemaphore(signal->wsemaphore, signal->thread_count, 0);
+	plt_assert(success, "Failed releasing semaphore.\n");
 #endif
 }
 
@@ -177,6 +211,9 @@ Plt_Thread_Mutex *plt_thread_mutex_create() {
 
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_init(&mutex->pmutex, NULL);
+#elif PLT_PLATFORM_WINDOWS
+	mutex->wmutex = CreateMutex(NULL, FALSE, NULL);
+	plt_assert(mutex->wmutex, "Failed creating mutex.\n");
 #endif
 
 	return mutex;
@@ -185,6 +222,8 @@ Plt_Thread_Mutex *plt_thread_mutex_create() {
 void plt_thread_mutex_destroy(Plt_Thread_Mutex **mutex) {
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_destroy(&(*mutex)->pmutex);
+#elif PLT_PLATFORM_WINDOWS
+	
 #endif
 	
 	free(*mutex);
@@ -194,11 +233,15 @@ void plt_thread_mutex_destroy(Plt_Thread_Mutex **mutex) {
 void plt_thread_mutex_lock(Plt_Thread_Mutex *mutex) {
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_lock(&mutex->pmutex);
+#elif PLT_PLATFORM_WINDOWS
+	WaitForSingleObject(mutex->wmutex, INFINITE);
 #endif
 }
 
 void plt_thread_mutex_unlock(Plt_Thread_Mutex *mutex) {
 #if PLT_PLATFORM_UNIX
 	pthread_mutex_unlock(&mutex->pmutex);
+#elif PLT_PLATFORM_WINDOWS
+	ReleaseMutex(mutex->wmutex);
 #endif
 }

@@ -3,6 +3,9 @@
 #include "platypus/base/thread/plt_thread.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/base/plt_defines.h"
+#include "platypus/base/macros.h"
+
+#include <math.h>
 
 void *_raster_thread(unsigned int thread_id, void *thread_data);
 typedef struct Plt_Triangle_Rasteriser_Thread_Data {
@@ -43,6 +46,8 @@ Plt_Triangle_Rasteriser *plt_triangle_rasteriser_create(Plt_Renderer *renderer, 
 
 	// Create threads
 	unsigned int platform_core_count = plt_platform_get_core_count();
+	plt_assert(platform_core_count > 0, "No cores detected on device\n");
+
 	float dim = ceilf(sqrtf(platform_core_count));
 	rasteriser->thread_dimensions = (Plt_Size){ dim, dim };
 	rasteriser->thread_count = rasteriser->thread_dimensions.width * rasteriser->thread_dimensions.height;
