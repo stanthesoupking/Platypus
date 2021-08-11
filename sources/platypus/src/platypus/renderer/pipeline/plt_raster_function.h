@@ -18,13 +18,29 @@
 #error "Must supply RASTER_LIGHTING_MODEL"
 #endif
 
-void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Processor_Result triangle_data) {
+#ifndef RASTER_DEBUG_THREAD_ID
+#define RASTER_DEBUG_THREAD_ID 0
+#endif
+
+void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsigned int thread_id, Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Processor_Result triangle_data) {
 	Plt_Renderer *renderer = rasteriser->renderer;
 	Plt_Color8 *framebuffer_pixels = renderer->framebuffer.pixels;
 	float *depth_buffer = renderer->depth_buffer;
 	int framebuffer_width = renderer->framebuffer.width;
 	int framebuffer_height = renderer->framebuffer.height;
 	Plt_Color8 render_color = renderer->render_color;
+	
+#if RASTER_DEBUG_THREAD_ID
+	Plt_Color8 debug_colors[6] = {
+		plt_color8_make(255, 0, 0, 255),
+		plt_color8_make(0, 255, 0, 255),
+		plt_color8_make(0, 0, 255, 255),
+		plt_color8_make(255, 255, 0, 255),
+		plt_color8_make(255, 0, 255, 255),
+		plt_color8_make(0, 255, 255, 255),
+	};
+	Plt_Color8 debug_color = debug_colors[thread_id % 6];
+#endif
 	
 	Plt_Vector3f normalized_light_direction = plt_vector3f_normalize(renderer->directional_lighting_direction);
 	
@@ -65,6 +81,11 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, Plt_
 		bounds_min.y = plt_clamp(bounds_min.y, region.y, region.y + region.height);
 		bounds_max.x = plt_clamp(bounds_max.x, region.x, region.x + region.width);
 		bounds_max.y = plt_clamp(bounds_max.y, region.y, region.y + region.height);
+
+		// Check if triangle has zero-size
+		if (((bounds_max.x - bounds_min.x) < 1) || ((bounds_max.y - bounds_min.y) < 1)) {
+			continue;
+		}
 
 		simd_int4 c_increment_x = triangle_data.c_increment_x[i];
 		simd_int4 c_increment_y = triangle_data.c_increment_y[i];
@@ -113,6 +134,10 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, Plt_
 					#else
 						tex_color = render_color;
 					#endif
+
+					#if RASTER_DEBUG_THREAD_ID
+						tex_color = debug_color;
+					#endif
 					
 					#if RASTER_LIGHTING_MODEL == 1
 						tex_color = plt_color8_multiply(tex_color, pixel_lighting);
@@ -129,3 +154,8 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, Plt_
 		}
 	}
 }
+
+#undef RASTER_DEBUG_THREAD_ID
+#undef RASTER_FUNC_NAME
+#undef RASTER_TEXTURED
+#undef RASTER_LIGHTING_MODEL

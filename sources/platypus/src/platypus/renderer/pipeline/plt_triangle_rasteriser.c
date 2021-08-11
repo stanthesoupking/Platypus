@@ -44,35 +44,30 @@ void plt_triangle_rasteriser_update_depth_buffer(Plt_Triangle_Rasteriser *raster
 #define RASTER_TEXTURED 1
 #define RASTER_LIGHTING_MODEL 0
 #include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
 
 #define RASTER_FUNC_NAME _draw_triangle_textured_lit
 #define RASTER_TEXTURED 1
 #define RASTER_LIGHTING_MODEL 1
 #include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
 
 #define RASTER_FUNC_NAME _draw_triangle_untextured_unlit
 #define RASTER_TEXTURED 0
 #define RASTER_LIGHTING_MODEL 0
 #include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
 
 #define RASTER_FUNC_NAME _draw_triangle_untextured_lit
 #define RASTER_TEXTURED 0
 #define RASTER_LIGHTING_MODEL 1
 #include "plt_raster_function.h"
-#undef RASTER_FUNC_NAME
-#undef RASTER_TEXTURED
-#undef RASTER_LIGHTING_MODEL
+
+#define RASTER_FUNC_NAME _draw_triangle_debug_thread_id
+#define RASTER_TEXTURED 0
+#define RASTER_LIGHTING_MODEL 1
+#define RASTER_DEBUG_THREAD_ID 1
+#include "plt_raster_function.h"
 
 typedef struct Plt_Triangle_Rasteriser_Thread_Data {
+	unsigned int thread_id;
 	Plt_Rect region;
 	Plt_Triangle_Rasteriser *rasteriser;
 	Plt_Triangle_Processor_Result tp_result;
@@ -83,17 +78,21 @@ void *_raster_thread(void *thread_data) {
 	Plt_Triangle_Rasteriser_Thread_Data *data = thread_data;
 	Plt_Renderer *renderer = data->rasteriser->renderer;
 
+	// Uncomment to output colour based on thread ID
+	// _draw_triangle_debug_thread_id(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
+	// return NULL;
+
 	if (renderer->bound_texture) {
 		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_textured_unlit(data->rasteriser, data->region, data->vp_result, data->tp_result);
+			_draw_triangle_textured_unlit(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
 		} else {
-			_draw_triangle_textured_lit(data->rasteriser, data->region, data->vp_result, data->tp_result);
+			_draw_triangle_textured_lit(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
 		}
 	} else {
 		if (renderer->lighting_model == Plt_Lighting_Model_Unlit) {
-			_draw_triangle_untextured_unlit(data->rasteriser, data->region, data->vp_result, data->tp_result);
+			_draw_triangle_untextured_unlit(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
 		} else {
-			_draw_triangle_untextured_lit(data->rasteriser, data->region, data->vp_result, data->tp_result);
+			_draw_triangle_untextured_lit(data->rasteriser, data->region, data->thread_id, data->vp_result, data->tp_result);
 		}
 	}
 
@@ -101,7 +100,12 @@ void *_raster_thread(void *thread_data) {
 }
 
 void plt_triangle_rasteriser_render_triangles(Plt_Triangle_Rasteriser *rasteriser, Plt_Triangle_Processor_Result tp_result, Plt_Vertex_Processor_Result vp_result) {
-	Plt_Size thread_dimensions = { 4, 4 };
+	
+	// TODO: Get optimal thread dimensions for thread count
+	unsigned int platform_core_count = plt_platform_get_core_count();
+	float dim = ceilf(sqrtf(platform_core_count));
+	Plt_Size thread_dimensions = { dim, dim };
+	
 	const int total_threads = thread_dimensions.width * thread_dimensions.height;
 	
 	Plt_Thread **threads = malloc(sizeof(Plt_Thread *) * total_threads);
@@ -113,6 +117,7 @@ void plt_triangle_rasteriser_render_triangles(Plt_Triangle_Rasteriser *rasterise
 		for (unsigned int x = 0; x < thread_dimensions.width; ++x) {
 			unsigned int index = y * thread_dimensions.width + x;
 
+			thread_datas[index].thread_id = index;
 			thread_datas[index].region = (Plt_Rect) {
 				.x = x * thread_region_size.width,
 				.y = y * thread_region_size.height,
