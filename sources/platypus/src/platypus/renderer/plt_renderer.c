@@ -152,6 +152,116 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	plt_timer_end(draw_mesh_timer, "DRAW_MESH");
 }
 
+void plt_renderer_direct_draw_pixel(Plt_Renderer *renderer, Plt_Vector2i position, unsigned int depth, Plt_Color8 color) {
+	if ((position.x < 0) || (position.y < 0) || (position.x > renderer->framebuffer.width) || (position.y > renderer->framebuffer.height)) {
+		return;
+	}
+	renderer->framebuffer.pixels[position.y * renderer->framebuffer.width + position.x] = color;
+}
+
+void plt_renderer_direct_draw_colored_rect(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Color8 color) {
+
+}
+
+void plt_renderer_direct_draw_texture(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Texture *texture) {
+	plt_renderer_direct_draw_texture_with_offset(renderer, rect, (Plt_Vector2i){0, 0}, depth, texture);
+}
+
+void plt_renderer_direct_draw_texture_with_offset(Plt_Renderer *renderer, Plt_Rect rect, Plt_Vector2i texture_offset, unsigned int depth, Plt_Texture *texture) {
+	Plt_Vector2i bounds_min = {
+		plt_clamp(rect.x, 0, renderer->framebuffer.width),
+		plt_clamp(rect.y, 0, renderer->framebuffer.height)
+	};
+
+	Plt_Vector2i bounds_max = {
+		plt_clamp(rect.x + rect.width, 0, renderer->framebuffer.width),
+		plt_clamp(rect.y + rect.height, 0, renderer->framebuffer.height)
+	};
+
+	Plt_Color8 *pixels = renderer->framebuffer.pixels;
+	unsigned int row_length = renderer->framebuffer.width;
+		
+	Plt_Vector2i p_inc = { 1, 1 };
+	Plt_Vector2i tex_pos = texture_offset;
+	for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
+		tex_pos.x = texture_offset.x;
+		for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
+			Plt_Color8 pixel = plt_texture_get_pixel(texture, tex_pos);
+			if (pixel.a == 255) {
+				pixels[y * row_length + x] = pixel;
+			} else if (pixel.a > 0) {
+				// Alpha blend
+				pixels[y * row_length + x] = plt_color8_blend(pixels[y * row_length + x], pixel);
+			}
+			tex_pos.x++;
+		}
+		tex_pos.y++;
+	}
+}
+
+void plt_renderer_direct_draw_scaled_texture(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Texture *texture) {
+	Plt_Vector2i bounds_min = {
+		plt_clamp(rect.x, 0, renderer->framebuffer.width),
+		plt_clamp(rect.y, 0, renderer->framebuffer.height)
+	};
+
+	Plt_Vector2i bounds_max = {
+		plt_clamp(rect.x + rect.width, 0, renderer->framebuffer.width),
+		plt_clamp(rect.y + rect.height, 0, renderer->framebuffer.height)
+	};
+
+	Plt_Color8 render_color = renderer->render_color;
+	Plt_Color8 *pixels = renderer->framebuffer.pixels;
+	unsigned int row_length = renderer->framebuffer.width;
+	
+	Plt_Texture *bound_texture = renderer->bound_texture;
+	
+	Plt_Vector2f p_inc = { 0.0f, 0.0f };
+	if (bound_texture) {
+		p_inc = (Plt_Vector2f){ 1.0f / (float)rect.width, 1.0f / (float)rect.height };
+	}
+	
+	Plt_Vector2f tex_pos = { 0.0f, 0.0f };
+	for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
+		tex_pos.x = 0.0f;
+		for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
+			
+			Plt_Color8 color;
+			if (bound_texture) {
+				color = plt_texture_sample(bound_texture, tex_pos);
+			} else {
+				color = render_color;
+			}
+			
+			pixels[y * row_length + x] = color;
+			
+			tex_pos.x += p_inc.x;
+		}
+		tex_pos.y += p_inc.y;
+	}
+}
+
+void plt_renderer_direct_draw_text(Plt_Renderer *renderer, Plt_Vector2i position, Plt_Font *font, const char *text) {
+	Plt_Size character_size = plt_font_get_character_size(font);
+	Plt_Texture *font_texture = plt_font_get_texture(font);
+	
+	Plt_Rect view_rect = {
+		.x = position.x,
+		.y = position.y,
+		.width = character_size.width,
+		.height = character_size.height
+	};
+	
+	char c = *text++;
+	while (c) {
+		Plt_Rect char_rect = plt_font_get_rect_for_character(font, c);
+		Plt_Vector2i texture_offset = { char_rect.x, char_rect.y };
+		plt_renderer_direct_draw_texture_with_offset(renderer, view_rect, texture_offset, 0, font_texture);
+		view_rect.x += character_size.width;
+		c = *text++;
+	}
+}
+
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	

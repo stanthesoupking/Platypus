@@ -125,6 +125,7 @@ Plt_Color8 plt_color8_add(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply_vector3f(Plt_Color8 a, Plt_Vector3f b);
 Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
+Plt_Color8 plt_color8_blend(Plt_Color8 a, Plt_Color8 b);
 
 // MARK: Type-Object System
 
@@ -159,7 +160,8 @@ typedef struct Plt_Object_Type_Descriptor {
 	unsigned int data_size;
 
 	void (*update)(Plt_Object *object, void *type_data, Plt_Frame_State state);
-	void (*render)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
+	void (*render_scene)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
+	void (*render_ui)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
 } Plt_Object_Type_Descriptor;
 
 Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
@@ -226,9 +228,18 @@ typedef enum Plt_Lighting_Model {
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;
+typedef struct Plt_Font Plt_Font;
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color);
-void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh);
 void plt_renderer_present(Plt_Renderer *renderer);
+
+void plt_renderer_direct_draw_pixel(Plt_Renderer *renderer, Plt_Vector2i position, unsigned int depth, Plt_Color8 color);
+void plt_renderer_direct_draw_colored_rect(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Color8 color);
+void plt_renderer_direct_draw_texture(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Texture *texture);
+void plt_renderer_direct_draw_texture_with_offset(Plt_Renderer *renderer, Plt_Rect rect, Plt_Vector2i texture_offset, unsigned int depth, Plt_Texture *texture);
+void plt_renderer_direct_draw_scaled_texture(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Texture *texture);
+void plt_renderer_direct_draw_text(Plt_Renderer *renderer, Plt_Vector2i position, Plt_Font *font, const char *text);
+
+void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh);
 
 void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type);
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
@@ -336,10 +347,10 @@ Plt_Vector2f plt_mesh_get_uv(Plt_Mesh *mesh, int index);
 // MARK: Texture
 
 typedef struct Plt_Texture Plt_Texture;
-Plt_Texture *plt_texture_create(unsigned int width, unsigned int height);
+Plt_Texture *plt_texture_create(Plt_Size size);
 void plt_texture_destroy(Plt_Texture **texture);
 
-Plt_Texture *plt_texture_create_with_bytes_nocopy(unsigned int width, unsigned int height, void *bytes);
+Plt_Texture *plt_texture_create_with_bytes_nocopy(Plt_Size size, void *bytes);
 Plt_Texture *plt_texture_load(const char *path);
 
 Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos);
@@ -349,6 +360,18 @@ Plt_Color8 plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
 
 void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value);
 
-Plt_Vector2i plt_texture_get_size(Plt_Texture *texture);
+Plt_Size plt_texture_get_size(Plt_Texture *texture);
+
+// MARK: Font
+
+typedef struct Plt_Font Plt_Font;
+Plt_Font *plt_font_create(Plt_Size atlas_size);
+void plt_font_destroy(Plt_Font **font);
+
+Plt_Font *plt_font_load(const char *path);
+
+Plt_Texture *plt_font_get_texture(Plt_Font *font);
+Plt_Size plt_font_get_character_size(Plt_Font *font);
+Plt_Rect plt_font_get_rect_for_character(Plt_Font *font, char c);
 
 #endif

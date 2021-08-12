@@ -39,3 +39,15 @@ Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s) {
 		plt_min((float)color.a * (float)s, 255)
 	};
 }
+
+Plt_Color8 plt_color8_blend(Plt_Color8 a, Plt_Color8 b) {
+	float b_mul = (float)b.a / 255.0f;
+	float a_mul = 1.0f - b_mul;
+
+	return (Plt_Color8){
+		plt_min((float)a.b * a_mul + (float)b.b * b_mul, 255),
+		plt_min((float)a.g * a_mul + (float)b.g * b_mul, 255),
+		plt_min((float)a.r * a_mul + (float)b.r * b_mul, 255),
+		plt_min((float)a.a + (float)b.a, 255)
+	};
+}

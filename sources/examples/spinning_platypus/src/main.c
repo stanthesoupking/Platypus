@@ -4,27 +4,55 @@
 #include <math.h>
 
 #define Plt_Object_Type_Spinning_Weapon 1
-void _spinning_weapon(Plt_Object *object, void *type_data, Plt_Frame_State state) {
-	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 1.0f * state.delta_time, 0}));
+void _spinning_weapon_update(Plt_Object *object, void *type_data, Plt_Frame_State state) {
+	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 0.002f * state.delta_time, 0}));
 	object->transform.translation.y += sinf(state.application_time * 0.005f) * 0.02f;
+}
+
+#define Plt_Object_Type_FPS_Viewer 2
+typedef struct Plt_Object_Type_FPS_Viewer_Data {
+	Plt_Font *font;
+} Plt_Object_Type_FPS_Viewer_Data;
+
+void _fps_viewer_render_ui(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) {
+	Plt_Object_Type_FPS_Viewer_Data *data = type_data;
+	char text[32];
+	sprintf(text, "FPS: %d", (int)(1000 / state.delta_time));
+	plt_renderer_direct_draw_text(renderer, (Plt_Vector2i){0, 0}, data->font, text);
 }
 
 int main(int argc, char **argv) {
 	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 
-	const unsigned int type_descriptor_count = 1;
-	Plt_Object_Type_Descriptor type_descriptors[1] = {
+	const unsigned int type_descriptor_count = 2;
+	Plt_Object_Type_Descriptor type_descriptors[2] = {
 		{ // Spinning Weapon
 			.id = Plt_Object_Type_Spinning_Weapon,
 			.data_size = 0,
-			.update = _spinning_weapon,
-			.render = NULL
+			.update = _spinning_weapon_update,
+			.render_scene = NULL,
+			.render_ui = NULL
+		},
+		{ // FPS Viewer
+			.id = Plt_Object_Type_FPS_Viewer,
+			.data_size = sizeof(Plt_Object_Type_FPS_Viewer_Data),
+			.update = NULL,
+			.render_scene = NULL,
+			.render_ui = _fps_viewer_render_ui
 		}
 	};
 	
 	Plt_World *world = plt_world_create(128, type_descriptors, type_descriptor_count);
 	plt_application_set_world(app, world);
+
+	Plt_Font *font = plt_font_load("assets/font_10x16.png");
+	
+	Plt_Object *fps_viewer = plt_world_create_object(world, NULL, Plt_Object_Type_FPS_Viewer, "FPS Viewer");
+	{
+		Plt_Object_Type_FPS_Viewer_Data *fps_viewer_data = fps_viewer->type_data;
+		fps_viewer_data->font = font;
+	}
 
 //	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
 //	Plt_Texture *platypus_texture = plt_texture_load("../sources/examples/spinning_platypus/assets/platypus.png");
@@ -55,7 +83,7 @@ int main(int argc, char **argv) {
 	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, -1.0f, 10.0f };
 	{
 		Plt_Object_Type_Flying_Camera_Controller_Data *flying_camera_type_data = flying_camera_object->type_data;
-		flying_camera_type_data->speed = 100.0f;
+		flying_camera_type_data->speed = 5.0f;
 	}
 	
 	Plt_Object *camera_object = plt_world_create_object(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
@@ -68,26 +96,9 @@ int main(int argc, char **argv) {
 	plt_renderer_set_ambient_lighting(renderer, (Plt_Vector3f){ 0.4f, 0.3f, 0.3f });
 	plt_renderer_set_directional_lighting(renderer, (Plt_Vector3f){ 1.0f, 0.78f, 0.78f });
 	plt_renderer_set_directional_lighting_direction(renderer, (Plt_Vector3f){-0.3f,-1.0f,0.1f});
-	
-	float frame_time_accumulator = 0.0f;
-	float average_frame_time = 0.0f;
-	unsigned int total_frames = 0;
 
 	while (!plt_application_should_close(app)) {
-		float start = plt_application_get_milliseconds_since_creation(app);
-
 		plt_application_update(app);
-
-		float frame_time = plt_max(plt_application_get_milliseconds_since_creation(app) - start, 0);
-		frame_time_accumulator += frame_time;
-		++total_frames;
-
-		if (total_frames > 100) {
-			average_frame_time = frame_time_accumulator / total_frames;
-			frame_time_accumulator = 0.0f;
-			total_frames = 0;
-			printf("Render time: %.2fms\n", average_frame_time);
-		}
 	}
 
 	plt_mesh_destroy(&platypus_mesh);

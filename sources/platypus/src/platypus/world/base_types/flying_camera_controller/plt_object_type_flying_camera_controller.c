@@ -8,21 +8,23 @@ void _flying_camera_controller_type_update(Plt_Object *object, void *type_data, 
 	Plt_Vector3f forwards = plt_object_get_forward(object);
 	Plt_Vector3f right = plt_object_get_right(object);
 
+	float adjusted_speed = data->speed * 0.01f * state.delta_time;
+
 	Plt_Key pressed = plt_input_state_get_pressed_Keys(state.input_state);
 	if (pressed & Plt_Key_W) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, data->speed * state.delta_time));
+		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, adjusted_speed));
 	}
 	
 	if (pressed & Plt_Key_S) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, -data->speed * state.delta_time));
+		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, -adjusted_speed));
 	}
 	
 	if (pressed & Plt_Key_A) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, -data->speed * 0.25f * state.delta_time));
+		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, -adjusted_speed * 0.5f));
 	}
 	
 	if (pressed & Plt_Key_D) {
-		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, data->speed * 0.25f * state.delta_time));
+		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(right, adjusted_speed * 0.5f));
 	}
 	
 	Plt_Vector2f mouse_movement = plt_input_state_get_mouse_movement(state.input_state);
@@ -40,6 +42,7 @@ Plt_Object_Type_Descriptor plt_object_type_flying_camera_controller_get_descript
 		.id = Plt_Object_Type_Flying_Camera_Controller,
 		.data_size = sizeof(Plt_Object_Type_Flying_Camera_Controller_Data),
 		.update = _flying_camera_controller_type_update,
-		.render = NULL
+		.render_scene = NULL,
+		.render_ui = NULL
 	};
 }

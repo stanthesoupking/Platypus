@@ -40,7 +40,8 @@ typedef struct Plt_World {
 } Plt_World;
 
 void plt_world_update(Plt_World *world, Plt_Frame_State frame_state);
-void plt_world_render(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer);
+void plt_world_render_scene(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer);
+void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer);
 
 Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt_Object *object);
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object);

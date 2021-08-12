@@ -24,6 +24,7 @@ Plt_Object_Type_Descriptor plt_object_type_camera_get_descriptor() {
 		.id = Plt_Object_Type_Camera,
 		.data_size = sizeof(Plt_Object_Type_Camera_Data),
 		.update = NULL,
-		.render = NULL
+		.render_scene = NULL,
+		.render_ui = NULL
 	};
 }

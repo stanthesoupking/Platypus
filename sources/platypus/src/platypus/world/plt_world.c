@@ -272,7 +272,7 @@ void plt_world_update(Plt_World *world, Plt_Frame_State frame_state) {
 	}
 }
 
-void plt_world_render(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
+void plt_world_render_scene(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
 	plt_world_update_object_matrices(world);
 
 	// Get camera object
@@ -298,14 +298,31 @@ void plt_world_render(Plt_World *world, Plt_Frame_State frame_state, Plt_Rendere
 
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];
-		void (*render_func)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) = type.descriptor.render;
-		if (!render_func) {
+		void (*render_scene_func)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) = type.descriptor.render_scene;
+		if (!render_scene_func) {
 			continue;
 		}
 		
 		Plt_Registered_Object_Type_Entry *entry = (Plt_Registered_Object_Type_Entry *)type.object_entries;
 		for (unsigned int j = 0; j < type.object_entry_count; ++j) {
-			render_func(entry->object, entry->data, frame_state, renderer);
+			render_scene_func(entry->object, entry->data, frame_state, renderer);
+			
+			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
+		}
+	}
+}
+
+void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
+	for (unsigned int i = 0; i < world->type_count; ++i) {
+		Plt_Registered_Object_Type type = world->types[i];
+		void (*render_ui_func)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) = type.descriptor.render_ui;
+		if (!render_ui_func) {
+			continue;
+		}
+		
+		Plt_Registered_Object_Type_Entry *entry = (Plt_Registered_Object_Type_Entry *)type.object_entries;
+		for (unsigned int j = 0; j < type.object_entry_count; ++j) {
+			render_ui_func(entry->object, entry->data, frame_state, renderer);
 			
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}

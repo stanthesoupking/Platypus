@@ -36,6 +36,7 @@ typedef struct Plt_Application {
 
 	double millis_at_creation;
 	double millis_at_since_last_update;
+	double millis_since_world_last_update;
 
 	unsigned int scale;
 	Plt_Color8 clear_color;
@@ -78,6 +79,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 
 	application->millis_at_creation = plt_application_current_milliseconds();
 	application->millis_at_since_last_update = plt_application_current_milliseconds();
+	application->millis_since_world_last_update = plt_application_current_milliseconds();
 	plt_application_set_target_fps(application, 60);
 
 	application->framebuffer_surface = NULL;
@@ -98,8 +100,12 @@ bool plt_application_should_close(Plt_Application *application) {
 }
 
 void plt_application_update(Plt_Application *application) {
+	double current_millis = plt_application_current_milliseconds();
+	float delta_time = current_millis - application->millis_since_world_last_update;
+	application->millis_since_world_last_update = current_millis;
+	
 	Plt_Frame_State frame_state = {
-		.delta_time = 0.01f, // TODO: get delta time
+		.delta_time = delta_time,
 		.application_time = plt_application_get_milliseconds_since_creation(application),
 		.input_state = &application->input_state
 	};
@@ -125,7 +131,8 @@ void plt_application_update(Plt_Application *application) {
 		plt_world_update(application->world, frame_state);
 
 		plt_renderer_clear(application->renderer, plt_color8_make(35,45,30,255));
-		plt_world_render(application->world, frame_state, application->renderer);
+		plt_world_render_scene(application->world, frame_state, application->renderer);
+		plt_world_render_ui(application->world, frame_state, application->renderer);
 		plt_renderer_present(application->renderer);
 	}
 
@@ -135,7 +142,7 @@ void plt_application_update(Plt_Application *application) {
 #if PLT_PLATFORM_WINDOWS
 	Sleep(wait_time_ms);
 #else
-	usleep(wait_time_ms * 1000);
+	usleep(wait_time_ms * 880);
 #endif
 	application->millis_at_since_last_update = plt_application_current_milliseconds();
 }
