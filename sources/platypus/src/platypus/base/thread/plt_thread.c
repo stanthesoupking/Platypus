@@ -154,7 +154,11 @@ void plt_thread_pool_signal_data_ready(Plt_Thread_Pool *pool) {
 }
 
 void plt_thread_pool_wait_until_complete(Plt_Thread_Pool *pool) {
-	while (pool->completed_thread_count < pool->thread_count) {
+	unsigned int current_completed = 0;
+	while (current_completed < pool->thread_count) {
+		plt_thread_mutex_lock(pool->completed_thread_mutex);
+		current_completed = pool->completed_thread_count;
+		plt_thread_mutex_unlock(pool->completed_thread_mutex);
 #if PLT_PLATFORM_UNIX
 		usleep(100);
 #elif PLT_PLATFORM_WINDOWS
