@@ -11,6 +11,10 @@ Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object) {
 	return plt_matrix_multiply(parent_matrix, plt_transform_to_matrix(object->transform));
 }
 
+Plt_Object **plt_object_get_collisions(Plt_Object *object, unsigned int *collision_count) {
+	return plt_world_get_object_collisions(object->world, object, collision_count);
+}
+
 Plt_Vector3f plt_object_get_forward(Plt_Object *object) {
 	Plt_Vector4f v = { 0.0f, 0.0f, -1.0f, 0.0f };
 	Plt_Matrix4x4f model = plt_object_get_model_matrix(object);

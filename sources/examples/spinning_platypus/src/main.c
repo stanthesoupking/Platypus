@@ -5,8 +5,19 @@
 
 #define Plt_Object_Type_Spinning_Weapon 1
 void _spinning_weapon_update(Plt_Object *object, void *type_data, Plt_Frame_State state) {
-	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 0.002f * state.delta_time, 0}));
-	object->transform.translation.y += sinf(state.application_time * 0.005f) * 0.02f;
+	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 0.0005f * state.delta_time, 0}));
+	object->transform.translation.y += sinf(state.application_time * 0.0025f) * 0.005f;
+
+	// Handle collisions
+	unsigned int collision_count = 0;
+	Plt_Object **collisions = plt_object_get_collisions(object, &collision_count);
+	for (unsigned int i = 0; i < collision_count; ++i) {
+		printf("'%s' collided with '%s'!\n", object->name, collisions[i]->name);
+	}
+	
+	if (collision_count == 0) {
+		printf("'%s' didn't collide with anything.\n", object->name);
+	}
 }
 
 #define Plt_Object_Type_FPS_Viewer 2
@@ -54,29 +65,45 @@ int main(int argc, char **argv) {
 		fps_viewer_data->font = font;
 	}
 
-//	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("../sources/examples/spinning_platypus/assets/platypus.ply");
-//	Plt_Texture *platypus_texture = plt_texture_load("../sources/examples/spinning_platypus/assets/platypus.png");
 	Plt_Mesh *platypus_mesh = plt_mesh_load_ply("assets/gun.ply");
 	Plt_Texture *platypus_texture = plt_texture_load("assets/gun.png");
+	
+	Plt_Mesh *crate_mesh = plt_mesh_create_cube((Plt_Vector3f){1, 1, 1});
+	Plt_Texture *crate_texture = plt_texture_load("assets/crate.png");
 
-	Plt_Object *platypus_object = plt_world_create_object(world, NULL, Plt_Object_Type_Spinning_Weapon, "Platypus");
-	platypus_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, 0, 0 });
-	platypus_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
+	Plt_Object *weapon_object = plt_world_create_object(world, NULL, Plt_Object_Type_Spinning_Weapon, "Weapon");
+	weapon_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, 0, 0 });
+	weapon_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
 
-	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, platypus_object, Plt_Object_Type_Mesh_Renderer, "Mesh");
+	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, weapon_object, Plt_Object_Type_Mesh_Renderer, "Weapon Mesh Renderer");
 	{
 		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = platypus_mesh_renderer->type_data;
 		mesh_type_data->mesh = platypus_mesh;
 		mesh_type_data->texture = platypus_texture;
 	}
 
-	Plt_Object *weapon_collider = plt_world_create_object(world, platypus_object, Plt_Object_Type_Collider, "Weapon Collider");
+	Plt_Object *weapon_collider = plt_world_create_object(world, weapon_object, Plt_Object_Type_Collider, "Weapon Collider");
 	{
 		Plt_Object_Type_Collider_Data *collider_data = weapon_collider->type_data;
 		collider_data->shape_type = Plt_Shape_Type_Box;
 		collider_data->box_shape.size = (Plt_Vector3f){ 5.0f, 1.4f, 1.0f };
 	}
+	
+	Plt_Object *test_box = plt_world_create_object(world, NULL, Plt_Object_Type_Collider, "Test Box Collider");
+	test_box->transform.translation = (Plt_Vector3f){1.0f, 0.5f, 0.0f};
+	{
+		Plt_Object_Type_Collider_Data *collider_data = test_box->type_data;
+		collider_data->shape_type = Plt_Shape_Type_Box;
+		collider_data->box_shape.size = (Plt_Vector3f){ 1.0f, 1.0f, 1.0f };
+	}
 
+	Plt_Object *test_box_renderer = plt_world_create_object(world, test_box, Plt_Object_Type_Mesh_Renderer, "Test Box Renderer");
+	{
+		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = test_box_renderer->type_data;
+		mesh_type_data->mesh = crate_mesh;
+		mesh_type_data->texture = crate_texture;
+	}
+	
 	Plt_Mesh *terrain_mesh = plt_mesh_load_ply("assets/terrain.ply");
 	Plt_Texture *lava_texture = plt_texture_load("assets/lava.png");
 	Plt_Object *terrain_object = plt_world_create_object(world, NULL, Plt_Object_Type_Mesh_Renderer, "Terrain");

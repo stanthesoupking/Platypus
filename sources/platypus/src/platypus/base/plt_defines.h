@@ -8,3 +8,7 @@
 
 // Toggle debug rendering of collision shapes 
 #define PLT_DEBUG_COLLIDERS 0
+
+// Maximum number of collisions that an object can receive per-update.
+// Any additional collisions are ignored.
+#define PLT_MAXIMUM_COLLISIONS_PER_OBJECT 32

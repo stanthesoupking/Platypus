@@ -5,6 +5,7 @@
 #include "platypus/base/plt_macros.h"
 #include "plt_base_types.h"
 #include "platypus/renderer/plt_renderer.h"
+#include "platypus/math/plt_collision.h"
 
 void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor descriptor);
 
@@ -106,6 +107,7 @@ Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Ob
 	};
 	object->type_data = NULL;
 	world->object_storage_private_data[object_index].is_set = true;
+	world->object_storage_private_data[object_index].collision_count = 0;
 	world->object_count++;
 
 	// Add as child to parent
@@ -253,8 +255,65 @@ void plt_world_update_object_matrices(Plt_World *world) {
 	}
 }
 
+void plt_world_update_object_collisions(Plt_World *world) {
+	// Reset all collision counts to zero
+	Plt_Linked_List_Node *node = world->object_list.root;
+	while (node != NULL) {
+		Plt_Object *object = node->data;
+		plt_world_get_object_private_data(world, object)->collision_count = 0;
+		node = node->next;
+	}
+	
+	Plt_Registered_Object_Type *collider_type = plt_world_get_registered_object_type(world, Plt_Object_Type_Collider);
+	plt_assert(collider_type, "The base collider object type is not registered in the world.\n");
+
+	Plt_Registered_Object_Type_Entry *entry = (Plt_Registered_Object_Type_Entry *)collider_type->object_entries;
+	for (unsigned int j = 0; j < collider_type->object_entry_count; ++j) {
+		Plt_Object_Type_Collider_Data *collider_data = (Plt_Object_Type_Collider_Data *)entry->data;
+		Plt_Object_Private_Data *object_private = plt_world_get_object_private_data(world, entry->object);
+		
+		Plt_Matrix4x4f object_matrix = plt_object_get_model_matrix(entry->object);
+
+		// Check for collisions
+		Plt_Registered_Object_Type_Entry *cmp_entry = (Plt_Registered_Object_Type_Entry *)collider_type->object_entries;
+		for (unsigned int k = 0; k < collider_type->object_entry_count; ++k) {
+			if (j != k) {
+				Plt_Object_Type_Collider_Data *cmp_collider_data = (Plt_Object_Type_Collider_Data *)cmp_entry->data;
+				Plt_Matrix4x4f cmp_object_matrix = plt_object_get_model_matrix(cmp_entry->object);
+				
+				// Check for collision
+				bool collision = false;
+				if ((collider_data->shape_type == Plt_Shape_Type_Box) && (cmp_collider_data->shape_type == Plt_Shape_Type_Box)) {
+					collision = plt_collision_box_box(object_matrix, cmp_object_matrix, collider_data->box_shape, cmp_collider_data->box_shape);
+				} else {
+					plt_abort("Unsupported collision type: only box collisions are supported currently.\n");
+				}
+				
+				if (collision) {
+					// Push collision up through object parent hierarchy; all parent objects will receive a collision event.
+					Plt_Object *o = entry->object;
+					while (o) {
+						Plt_Object_Private_Data *o_private = plt_world_get_object_private_data(world, o);
+						if (o_private->collision_count < PLT_MAXIMUM_COLLISIONS_PER_OBJECT) {
+							o_private->collisions[o_private->collision_count++] = cmp_entry->object;
+						}
+						o = plt_world_get_object_parent(world, o);
+					}
+				}
+			}
+			
+			// Move to next comparison collider
+			cmp_entry = (Plt_Registered_Object_Type_Entry *)(((char *)cmp_entry) + collider_type->object_entry_stride);
+		}
+		
+		// Move to next collider
+		entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + collider_type->object_entry_stride);
+	}
+}
+
 void plt_world_update(Plt_World *world, Plt_Frame_State frame_state) {
 	plt_world_update_object_matrices(world);
+	plt_world_update_object_collisions(world);
 
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];
@@ -334,10 +393,25 @@ Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt
 	return &world->object_storage_private_data[object_index];
 }
 
+Plt_Registered_Object_Type *plt_world_get_registered_object_type(Plt_World *world, Plt_Object_Type_ID id) {
+	for (unsigned int i = 0; i < world->type_count; ++i) {
+		if (world->types[i].id == id) {
+			return &world->types[i];
+		}
+	}
+	return NULL;
+}
+
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object) {
 	return plt_world_get_object_private_data(world, object)->parent;
 }
 
 Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object) {
 	return plt_world_get_object_private_data(world, object)->parent_matrix;
+}
+
+Plt_Object **plt_world_get_object_collisions(Plt_World *world, Plt_Object *object, unsigned int *collision_count) {
+	Plt_Object_Private_Data *data = plt_world_get_object_private_data(world, object);
+	*collision_count = data->collision_count;
+	return data->collisions;
 }

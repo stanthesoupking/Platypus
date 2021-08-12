@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platypus/platypus.h"
+#include "platypus/base/plt_defines.h"
 #include "platypus/base/plt_linked_list.h"
 #include "plt_object.h"
 
@@ -25,6 +26,9 @@ typedef struct Plt_Object_Private_Data {
 
 	Plt_Object *parent;
 	Plt_Linked_List children;
+
+	Plt_Object *collisions[PLT_MAXIMUM_COLLISIONS_PER_OBJECT];
+	unsigned int collision_count;
 } Plt_Object_Private_Data;
 
 typedef struct Plt_World {
@@ -44,5 +48,7 @@ void plt_world_render_scene(Plt_World *world, Plt_Frame_State frame_state, Plt_R
 void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer);
 
 Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt_Object *object);
+Plt_Registered_Object_Type *plt_world_get_registered_object_type(Plt_World *world, Plt_Object_Type_ID id);
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object);
 Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object);
+Plt_Object **plt_world_get_object_collisions(Plt_World *world, Plt_Object *object, unsigned int *collision_count);

@@ -1,7 +1,7 @@
-#include "platypus/platypus.h"
-#include "platypus/base/plt_macros.h"
-#include "math.h"
+#include "plt_math.h"
 
+#include <math.h>
+#include "platypus/base/plt_macros.h"
 #include "platypus/base/plt_simd.h"
 
 inline Plt_Matrix4x4f plt_matrix_identity() {
@@ -385,4 +385,8 @@ Plt_Matrix4x4f plt_quaternion_to_matrix(Plt_Quaternion q) {
 	m.columns[2][2] = 1 - 2 * u.x * u.x - 2 * u.y * u.y;
 
 	return m;
+}
+
+bool plt_box_intersection(Plt_Matrix4x4f matrix_a, Plt_Matrix4x4f matrix_b, Plt_Shape_Box box_a, Plt_Shape_Box box_b) {
+	
 }
