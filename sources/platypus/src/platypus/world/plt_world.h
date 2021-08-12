@@ -41,6 +41,11 @@ typedef struct Plt_World {
 
 	unsigned int type_count;
 	Plt_Registered_Object_Type *types;
+
+	bool is_updating;
+
+	unsigned int deferred_object_destroy_call_count;
+	Plt_Object **deferred_object_destroy_calls;
 } Plt_World;
 
 void plt_world_update(Plt_World *world, Plt_Frame_State frame_state);
@@ -52,3 +57,6 @@ Plt_Registered_Object_Type *plt_world_get_registered_object_type(Plt_World *worl
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object);
 Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object);
 Plt_Object **plt_world_get_object_collisions(Plt_World *world, Plt_Object *object, unsigned int *collision_count);
+
+Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
+void plt_world_destroy_object(Plt_World *world, Plt_Object **object, bool including_children);

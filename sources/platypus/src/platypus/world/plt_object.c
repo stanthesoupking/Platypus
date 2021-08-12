@@ -2,6 +2,18 @@
 
 #include "plt_world.h"
 
+Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name) {
+	plt_assert(world, "An object can't be created without a world.");
+	if (parent) {
+		plt_assert(parent->world == world, "Object parents must be in the same world as the child object.\n");
+	}
+	return plt_world_create_object(world, parent, type, name);
+}
+
+void plt_object_destroy(Plt_Object **object) {
+	plt_world_destroy_object((*object)->world, object, true);
+}
+
 Plt_Object *plt_object_get_parent(Plt_Object *object) {
 	return plt_world_get_object_parent(object->world, object);
 }

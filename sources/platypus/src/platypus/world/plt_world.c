@@ -53,15 +53,30 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 
 	world->object_storage = malloc(sizeof(Plt_Object) * object_storage_capacity);
 	world->object_storage_private_data = malloc(sizeof(Plt_Object_Private_Data) * object_storage_capacity);
-
 	for (int i = 0; i < object_storage_capacity; ++i) {
 		world->object_storage_private_data[i].is_set = false;
 	}
+
+	world->deferred_object_destroy_calls = malloc(sizeof(Plt_Object *) * object_storage_capacity);
+	world->deferred_object_destroy_call_count = 0;
+	world->is_updating = false;
 
 	return world;
 }
 
 void plt_world_destroy(Plt_World **world) {
+	// Destroy all objects
+	Plt_Linked_List_Node *node = (*world)->object_list.root;
+	while (node) {
+		Plt_Object *object = node->data;
+		Plt_Object_Private_Data *object_private = plt_world_get_object_private_data(*world, object);
+		Plt_Linked_List_Node *next = node->next;
+		if (object_private->parent == NULL) {
+			plt_world_destroy_object(*world, &object, true);
+		}
+		node = next;
+	}
+	
 	for (int i = 0; i < (*world)->type_count; ++i) {
 		void *object_data = (*world)->types[i].object_entries;
 		if (object_data) {
@@ -70,6 +85,8 @@ void plt_world_destroy(Plt_World **world) {
 	}
 	free((*world)->object_storage_private_data);
 	free((*world)->object_storage);
+	free((*world)->deferred_object_destroy_calls);
+	free((*world)->types);
 	free(*world);
 	*world = NULL;
 }
@@ -150,17 +167,25 @@ Plt_Object *plt_world_create_object(Plt_World *world, Plt_Object *parent, Plt_Ob
 	return object;
 }
 
-void plt_world_destroy_object(Plt_World *world, Plt_Object **object) {
+void plt_world_destroy_object(Plt_World *world, Plt_Object **object, bool including_children) {
+	Plt_Linked_List_Node *node;
 	unsigned int object_index = plt_world_get_object_index(world, *object);
 	plt_assert(object_index < world->object_storage_capacity, "Object is outside of world's object capacity\n");
-	
+
+	if (world->is_updating) {
+		// Defer object destruction until after the update is finished.
+		world->deferred_object_destroy_calls[world->deferred_object_destroy_call_count++] = *object;
+		*object = NULL;
+		return;
+	}
+		
 	if (world->object_storage_private_data[object_index].is_set) {
 		world->object_storage_private_data[object_index].is_set = false;
 		world->object_count--;
 	}
 	
-	// TODO: Remove from object list
-	Plt_Linked_List_Node *node = world->object_list.root;
+	// Remove from object list
+	node = world->object_list.root;
 	if (node->data == *object) {
 		world->object_list.root = node->next;
 		free(node);
@@ -178,13 +203,7 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object) {
 	
 	// Remove type data
 	if ((*object)->type != Plt_Object_Type_None) {
-		Plt_Registered_Object_Type *type = NULL;
-		for (unsigned int i = 0; i < world->type_count; ++i) {
-			if (world->types[i].id == (*object)->type) {
-				type = &world->types[i];
-				break;
-			}
-		}
+		Plt_Registered_Object_Type *type = plt_world_get_registered_object_type(world, (*object)->type);
 		plt_assert(type, "Failed to find object type data storage.");
 		
 		int found_index = -1;
@@ -210,6 +229,19 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object) {
 		type->object_entry_count--;
 	}
 
+	if (including_children) {
+		// Remove children
+		Plt_Object_Private_Data *object_private = plt_world_get_object_private_data(world, *object);
+		node = object_private->children.root;
+		while (node) {
+			Plt_Object *child = node->data;
+			plt_world_destroy_object(world, &child, true);
+			Plt_Linked_List_Node *next = node->next;
+			free(node);
+			node = next;
+		}
+	}
+
 	*object = NULL;
 }
 
@@ -220,7 +252,8 @@ void plt_world_register_object_type(Plt_World *world, Plt_Object_Type_Descriptor
 		.id = descriptor.id,
 		.descriptor = descriptor,
 		.object_entry_stride = entry_stride,
-		.object_entries = malloc(entry_stride * world->object_storage_capacity)
+		.object_entries = malloc(entry_stride * world->object_storage_capacity),
+		.object_entry_count = 0
 	};
 }
 
@@ -311,7 +344,24 @@ void plt_world_update_object_collisions(Plt_World *world) {
 	}
 }
 
+void plt_world_destroy_deferred_objects(Plt_World *world) {
+	for (unsigned int i = 0; i < world->deferred_object_destroy_call_count; ++i) {
+		plt_world_destroy_object(world, &world->deferred_object_destroy_calls[i], true);
+	}
+	world->deferred_object_destroy_call_count = 0;
+}
+
+void plt_world_update_begin(Plt_World *world) {
+	world->is_updating = true;
+}
+
+void plt_world_update_finish(Plt_World *world) {
+	world->is_updating = false;
+	plt_world_destroy_deferred_objects(world);
+}
+
 void plt_world_update(Plt_World *world, Plt_Frame_State frame_state) {
+	plt_world_update_begin(world);
 	plt_world_update_object_matrices(world);
 	plt_world_update_object_collisions(world);
 
@@ -329,21 +379,19 @@ void plt_world_update(Plt_World *world, Plt_Frame_State frame_state) {
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}
 	}
+
+	plt_world_update_finish(world);
 }
 
 void plt_world_render_scene(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
+	plt_world_update_begin(world);
 	plt_world_update_object_matrices(world);
 
 	// Get camera object
 	Plt_Object *camera = NULL;
-	for (unsigned int i = 0; i < world->type_count; ++i) {
-		Plt_Registered_Object_Type type = world->types[i];
-		if (type.id == Plt_Object_Type_Camera) {
-			if (type.object_entry_count > 0) {
-				camera = ((Plt_Registered_Object_Type_Entry *)type.object_entries)[0].object;
-			}
-			break;
-		}
+	Plt_Registered_Object_Type *type = plt_world_get_registered_object_type(world, Plt_Object_Type_Camera);
+	if (type->object_entry_count > 0) {
+		camera = ((Plt_Registered_Object_Type_Entry *)type->object_entries)[0].object;
 	}
 	if (!camera) {
 		printf("No camera in world.\n");
@@ -369,9 +417,13 @@ void plt_world_render_scene(Plt_World *world, Plt_Frame_State frame_state, Plt_R
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}
 	}
+	
+	plt_world_update_finish(world);
 }
 
 void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Renderer *renderer) {
+	plt_world_update_begin(world);
+
 	for (unsigned int i = 0; i < world->type_count; ++i) {
 		Plt_Registered_Object_Type type = world->types[i];
 		void (*render_ui_func)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) = type.descriptor.render_ui;
@@ -386,6 +438,8 @@ void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Rend
 			entry = (Plt_Registered_Object_Type_Entry *)(((char *)entry) + type.object_entry_stride);
 		}
 	}
+	
+	plt_world_update_finish(world);
 }
 
 Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt_Object *object) {

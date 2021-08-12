@@ -3,16 +3,13 @@
 #include <stdlib.h>
 
 Plt_Matrix4x4f plt_object_type_camera_get_view_matrix(Plt_Object *camera) {
-	// TODO: Assert that this is a camera object
-	Plt_Transform t = plt_object_get_parent(camera)->transform;
-	t.rotation = plt_quaternion_invert(t.rotation);
-	t.translation = plt_vector3f_multiply_scalar(t.translation, -1.0f);
-
-	return plt_matrix_multiply(plt_quaternion_to_matrix(t.rotation), plt_matrix_translate_make(t.translation));
+	plt_assert(camera->type == Plt_Object_Type_Camera, "Object must be of type 'Plt_Object_Type_Camera'.\n");
+	Plt_Matrix4x4f model = plt_object_get_model_matrix(camera);
+	return plt_matrix_invert(model);
 }
 
 Plt_Matrix4x4f plt_object_type_camera_get_projection_matrix(Plt_Object *camera, Plt_Vector2i viewport) {
-	// TODO: Assert that this is a camera object
+	plt_assert(camera->type == Plt_Object_Type_Camera, "Object must be of type 'Plt_Object_Type_Camera'.\n");
 	Plt_Object_Type_Camera_Data *camera_type_data = (Plt_Object_Type_Camera_Data *)camera->type_data;
 
 	float aspect_ratio = viewport.x / (float)viewport.y;

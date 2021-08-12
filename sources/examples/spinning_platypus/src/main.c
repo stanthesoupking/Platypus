@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
 
 	Plt_Font *font = plt_font_load("assets/font_10x16.png");
 	
-	Plt_Object *fps_viewer = plt_world_create_object(world, NULL, Plt_Object_Type_FPS_Viewer, "FPS Viewer");
+	Plt_Object *fps_viewer = plt_object_create(world, NULL, Plt_Object_Type_FPS_Viewer, "FPS Viewer");
 	{
 		Plt_Object_Type_FPS_Viewer_Data *fps_viewer_data = fps_viewer->type_data;
 		fps_viewer_data->font = font;
@@ -71,33 +71,33 @@ int main(int argc, char **argv) {
 	Plt_Mesh *crate_mesh = plt_mesh_create_cube((Plt_Vector3f){1, 1, 1});
 	Plt_Texture *crate_texture = plt_texture_load("assets/crate.png");
 
-	Plt_Object *weapon_object = plt_world_create_object(world, NULL, Plt_Object_Type_Spinning_Weapon, "Weapon");
+	Plt_Object *weapon_object = plt_object_create(world, NULL, Plt_Object_Type_Spinning_Weapon, "Weapon");
 	weapon_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, 0, 0 });
 	weapon_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
 
-	Plt_Object *platypus_mesh_renderer = plt_world_create_object(world, weapon_object, Plt_Object_Type_Mesh_Renderer, "Weapon Mesh Renderer");
+	Plt_Object *platypus_mesh_renderer = plt_object_create(world, weapon_object, Plt_Object_Type_Mesh_Renderer, "Weapon Mesh Renderer");
 	{
 		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = platypus_mesh_renderer->type_data;
 		mesh_type_data->mesh = platypus_mesh;
 		mesh_type_data->texture = platypus_texture;
 	}
 
-	Plt_Object *weapon_collider = plt_world_create_object(world, weapon_object, Plt_Object_Type_Collider, "Weapon Collider");
+	Plt_Object *weapon_collider = plt_object_create(world, weapon_object, Plt_Object_Type_Collider, "Weapon Collider");
 	{
 		Plt_Object_Type_Collider_Data *collider_data = weapon_collider->type_data;
 		collider_data->shape_type = Plt_Shape_Type_Box;
 		collider_data->box_shape.size = (Plt_Vector3f){ 5.0f, 1.4f, 1.0f };
 	}
 	
-	Plt_Object *test_box = plt_world_create_object(world, NULL, Plt_Object_Type_Collider, "Test Box Collider");
-	test_box->transform.translation = (Plt_Vector3f){1.0f, 0.5f, 0.0f};
+	Plt_Object *test_box = plt_object_create(world, NULL, Plt_Object_Type_Collider, "Test Box Collider");
+	test_box->transform.translation = (Plt_Vector3f){1.5f, 0.5f, 0.0f};
 	{
 		Plt_Object_Type_Collider_Data *collider_data = test_box->type_data;
 		collider_data->shape_type = Plt_Shape_Type_Box;
 		collider_data->box_shape.size = (Plt_Vector3f){ 1.0f, 1.0f, 1.0f };
 	}
 
-	Plt_Object *test_box_renderer = plt_world_create_object(world, test_box, Plt_Object_Type_Mesh_Renderer, "Test Box Renderer");
+	Plt_Object *test_box_renderer = plt_object_create(world, test_box, Plt_Object_Type_Mesh_Renderer, "Test Box Renderer");
 	{
 		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = test_box_renderer->type_data;
 		mesh_type_data->mesh = crate_mesh;
@@ -106,21 +106,21 @@ int main(int argc, char **argv) {
 	
 	Plt_Mesh *terrain_mesh = plt_mesh_load_ply("assets/terrain.ply");
 	Plt_Texture *lava_texture = plt_texture_load("assets/lava.png");
-	Plt_Object *terrain_object = plt_world_create_object(world, NULL, Plt_Object_Type_Mesh_Renderer, "Terrain");
+	Plt_Object *terrain_object = plt_object_create(world, NULL, Plt_Object_Type_Mesh_Renderer, "Terrain");
 	{
 		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = terrain_object->type_data;
 		mesh_type_data->mesh = terrain_mesh;
 		mesh_type_data->texture = lava_texture;
 	}
 	
-	Plt_Object *flying_camera_object = plt_world_create_object(world, NULL, Plt_Object_Type_Flying_Camera_Controller, "Flying Camera");
+	Plt_Object *flying_camera_object = plt_object_create(world, NULL, Plt_Object_Type_Flying_Camera_Controller, "Flying Camera");
 	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, -1.0f, 10.0f };
 	{
 		Plt_Object_Type_Flying_Camera_Controller_Data *flying_camera_type_data = flying_camera_object->type_data;
 		flying_camera_type_data->speed = 5.0f;
 	}
 	
-	Plt_Object *camera_object = plt_world_create_object(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
+	Plt_Object *camera_object = plt_object_create(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
 	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
 	camera_type_data->fov = plt_math_deg2rad(150.0f);
 	camera_type_data->near_z = 0.1f;
