@@ -1,5 +1,5 @@
 #include "plt_framebuffer.h"
-#include "platypus/base/platform.h"
+#include "platypus/base/plt_platform.h"
 
 #include <string.h>
 

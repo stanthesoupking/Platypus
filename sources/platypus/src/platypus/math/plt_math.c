@@ -1,8 +1,8 @@
 #include "platypus/platypus.h"
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_macros.h"
 #include "math.h"
 
-#include "platypus/base/simd.h"
+#include "platypus/base/plt_simd.h"
 
 inline Plt_Matrix4x4f plt_matrix_identity() {
 	return (Plt_Matrix4x4f) {{

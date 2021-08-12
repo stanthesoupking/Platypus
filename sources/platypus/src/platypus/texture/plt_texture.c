@@ -1,8 +1,8 @@
 #include "platypus/platypus.h"
 
 #include <stdlib.h>
-#include "platypus/base/macros.h"
-#include "platypus/base/platform.h"
+#include "platypus/base/plt_macros.h"
+#include "platypus/base/plt_platform.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "platypus/vendor/stb_image.h"

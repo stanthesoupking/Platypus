@@ -2,8 +2,8 @@
 
 #include <stdlib.h>
 #include "platypus/application/plt_application.h"
-#include "platypus/base/macros.h"
-#include "platypus/base/platform.h"
+#include "platypus/base/plt_macros.h"
+#include "platypus/base/plt_platform.h"
 #include "platypus/mesh/plt_mesh.h"
 #include "platypus/renderer/pipeline/plt_vertex_processor.h"
 #include "platypus/renderer/pipeline/plt_triangle_processor.h"
@@ -125,8 +125,105 @@ void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	}
 }
 
+void plt_renderer_plot_line_low(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {
+    int dx = p1.x - p0.x;
+    int dy = p1.y - p0.y;
+	int yi = 1;
+	if (dy < 0) {
+		yi = -1;
+		dy = -dy;
+	}
+    int d = (2 * dy) - dx;
+    int y = p0.y;
+	
+	for (int x = p0.x; x < p1.x; ++x) {
+		plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, color);
+		if (d > 0) {
+			y += yi;
+			d += 2 * (dy - dx);
+		} else {
+        	d += 2 * dy;
+		}
+	}
+}
+
+void plt_renderer_plot_line_high(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {
+    int dx = p1.x - p0.x;
+    int dy = p1.y - p0.y;
+	int xi = 1;
+	if (dx < 0) {
+		xi = -1;
+		dx = -dx;
+	}
+    int d = 2 * dx - dy;
+    int x = p0.x;
+	
+	plt_assert(dx >= 0, "dx is not greater than 0");
+
+	for (int y = p0.y; y < p1.y; ++y) {
+		plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, color);
+		if (d > 0) {
+			x += xi;
+			d += 2 * (dx - dy);
+		} else {
+        	d += 2 * dx;
+		}
+	}
+}
+
+void plt_renderer_plot_line(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {
+	if (abs(p1.y - p0.y) < abs(p1.x - p0.x)) {
+		if (p0.x > p1.x) {
+			plt_renderer_plot_line_low(renderer, p1, p0, color);
+		} else {
+			plt_renderer_plot_line_low(renderer, p0, p1, color);
+		}
+	} else {
+		if (p0.y > p1.y) {
+			plt_renderer_plot_line_high(renderer, p1, p0, color);
+		} else {
+			plt_renderer_plot_line_high(renderer, p0, p1, color);
+		}
+	}
+}
+
 void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	// TODO: Implement line rendering
+	Plt_Vector2i viewport = { renderer->framebuffer.width, renderer->framebuffer.height };
+	
+	// Process vertices
+	plt_timer_start(vp_timer)
+	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
+	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
+
+	Plt_Color8 color = renderer->render_color;
+
+	// Draw lines
+	for (unsigned int i = 0; i < vp_result.vertex_count; i += 3) {
+		bool behind_camera = false;
+		bool on_screen = false;
+		Plt_Vector2i points[3];
+		for (unsigned int j = 0; j < 3; ++j) {
+			if (vp_result.clipspace_w[i + j] <= 0) {
+				behind_camera = true;
+				break;
+			}
+			
+			points[j].x = vp_result.screen_positions_x[i + j];
+			points[j].y = vp_result.screen_positions_y[i + j];
+			
+			if ((points[j].x > 0) && (points[j].x < renderer->framebuffer.width) && (points[j].y > 0) && (points[j].y < renderer->framebuffer.height)) {
+				on_screen = true;
+			}
+		}
+		
+		if (behind_camera || !on_screen) {
+			continue;
+		}
+
+		plt_renderer_plot_line(renderer, points[0], points[1], color);
+		plt_renderer_plot_line(renderer, points[1], points[2], color);
+		plt_renderer_plot_line(renderer, points[2], points[0], color);
+	}
 }
 
 void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {

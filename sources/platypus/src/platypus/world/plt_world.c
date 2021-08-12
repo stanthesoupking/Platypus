@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_macros.h"
 #include "plt_base_types.h"
 #include "platypus/renderer/plt_renderer.h"
 

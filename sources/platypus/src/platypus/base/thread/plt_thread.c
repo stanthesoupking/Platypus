@@ -1,7 +1,7 @@
 #include "plt_thread.h"
 
-#include "platypus/base/platform.h"
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_platform.h"
+#include "platypus/base/plt_macros.h"
 #include <stdlib.h>
 
 #if PLT_PLATFORM_UNIX

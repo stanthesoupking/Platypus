@@ -9,6 +9,7 @@ void _mesh_renderer_type_render(Plt_Object *object, void *type_data, Plt_Frame_S
 		return;
 	}
 	
+	plt_renderer_set_lighting_model(renderer, Plt_Lighting_Model_Vertex_Lit);
 	plt_renderer_set_model_matrix(renderer, plt_object_get_model_matrix(object));
 	plt_renderer_bind_texture(renderer, mesh_type_data->texture);
 	plt_renderer_set_render_color(renderer, mesh_type_data->color);

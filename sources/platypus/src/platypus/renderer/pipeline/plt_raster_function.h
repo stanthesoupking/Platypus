@@ -4,7 +4,7 @@
 #include "platypus/renderer/pipeline/plt_vertex_processor.h"
 #include "platypus/renderer/pipeline/plt_triangle_processor.h"
 #include "platypus/renderer/pipeline/plt_triangle_rasteriser.h"
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_macros.h"
 
 #ifndef RASTER_FUNC_NAME
 #error "Must supply RASTER_FUNC_NAME"

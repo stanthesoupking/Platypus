@@ -55,6 +55,21 @@ typedef struct Plt_Transform {
 	Plt_Vector3f scale;
 } Plt_Transform;
 
+typedef enum Plt_Shape_Type {
+	Plt_Shape_Type_Sphere,
+	Plt_Shape_Type_Box
+} Plt_Shape_Type;
+
+typedef struct Plt_Shape_Sphere {
+	Plt_Vector3f origin;
+	float radius;
+} Plt_Shape_Sphere;
+
+typedef struct Plt_Shape_Box {
+	Plt_Vector3f origin;
+	Plt_Vector3f size;
+} Plt_Shape_Box;
+
 // Values defined in row-major format
 Plt_Matrix4x4f plt_matrix_identity();
 Plt_Matrix4x4f plt_matrix_zero();
@@ -184,6 +199,7 @@ const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
 const static Plt_Object_Type_ID Plt_Object_Type_Mesh_Renderer = PLT_BASE_TYPE_ID_OFFSET + 1;
 const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 2;
 const static Plt_Object_Type_ID Plt_Object_Type_Flying_Camera_Controller = PLT_BASE_TYPE_ID_OFFSET + 3;
+const static Plt_Object_Type_ID Plt_Object_Type_Collider = PLT_BASE_TYPE_ID_OFFSET + 4;
 
 // Mesh Renderer
 typedef struct Plt_Mesh Plt_Mesh;
@@ -211,6 +227,15 @@ typedef struct Plt_Object_Type_Flying_Camera_Controller_Data {
 	float pitch;
 	float yaw;
 } Plt_Object_Type_Flying_Camera_Controller_Data;
+
+// Collider
+typedef struct Plt_Object_Type_Collider_Data {
+	Plt_Shape_Type shape_type;
+	union {
+		Plt_Shape_Box box_shape;
+		Plt_Shape_Sphere sphere_shape;
+	};
+} Plt_Object_Type_Collider_Data;
 
 // MARK: Renderer
 

@@ -17,7 +17,7 @@ typedef struct Plt_Object_Type_FPS_Viewer_Data {
 void _fps_viewer_render_ui(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) {
 	Plt_Object_Type_FPS_Viewer_Data *data = type_data;
 	char text[32];
-	sprintf(text, "FPS: %d", (int)(1000 / state.delta_time));
+	sprintf(text, "FPS:%d", (int)(1000 / state.delta_time));
 	plt_renderer_direct_draw_text(renderer, (Plt_Vector2i){0, 0}, data->font, text);
 }
 
@@ -68,6 +68,13 @@ int main(int argc, char **argv) {
 		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = platypus_mesh_renderer->type_data;
 		mesh_type_data->mesh = platypus_mesh;
 		mesh_type_data->texture = platypus_texture;
+	}
+
+	Plt_Object *weapon_collider = plt_world_create_object(world, platypus_object, Plt_Object_Type_Collider, "Weapon Collider");
+	{
+		Plt_Object_Type_Collider_Data *collider_data = weapon_collider->type_data;
+		collider_data->shape_type = Plt_Shape_Type_Box;
+		collider_data->box_shape.size = (Plt_Vector3f){ 5.0f, 1.4f, 1.0f };
 	}
 
 	Plt_Mesh *terrain_mesh = plt_mesh_load_ply("assets/terrain.ply");

@@ -9,8 +9,8 @@
 #include "platypus/world/plt_world.h"
 #include "platypus/input/plt_input_state.h"
 
-#include "platypus/base/platform.h"
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_platform.h"
+#include "platypus/base/plt_macros.h"
 
 #if PLT_PLATFORM_WINDOWS
 #include <time.h>
@@ -52,7 +52,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 
 	application->clear_color = plt_color8_make(80,80,80,255);
 	application->scale = scale;
-
+	
 	if (SDL_Init(0)) {
 		plt_abort("Failed initialising SDL.\n");
 	}
@@ -61,7 +61,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	if (options & Plt_Application_Option_Fullscreen) {
 		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
-	
+		
 	application->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 	plt_assert(application->window, "SDL window creation failed.\n");
 

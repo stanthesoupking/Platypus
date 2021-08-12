@@ -1,7 +1,7 @@
 #pragma once
 
 #include "platypus/platypus.h"
-#include "platypus/base/simd.h"
+#include "platypus/base/plt_simd.h"
 #include "plt_vertex_processor.h"
 
 typedef struct Plt_Triangle_Processor Plt_Triangle_Processor;

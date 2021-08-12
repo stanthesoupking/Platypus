@@ -3,7 +3,7 @@
 #include "platypus/base/thread/plt_thread.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/base/plt_defines.h"
-#include "platypus/base/macros.h"
+#include "platypus/base/plt_macros.h"
 
 #include <math.h>
 

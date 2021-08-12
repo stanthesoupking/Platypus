@@ -1,5 +1,5 @@
 #pragma once
-#include "platform.h"
+#include "plt_platform.h"
 
 #ifdef __aarch64__
 #define NEON 1

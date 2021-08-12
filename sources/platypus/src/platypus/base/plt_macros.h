@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "platform.h"
+#include "plt_platform.h"
 #include "plt_defines.h"
 
 #if PLT_PLATFORM_WINDOWS
