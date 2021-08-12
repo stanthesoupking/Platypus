@@ -70,15 +70,24 @@ void plt_triangle_rasteriser_update_framebuffer(Plt_Triangle_Rasteriser *rasteri
 	rasteriser->viewport_size = (Plt_Size){ framebuffer.width, framebuffer.height };
 
 	// Update thread regions
-	Plt_Size thread_region_size = { rasteriser->viewport_size.width / rasteriser->thread_dimensions.width, rasteriser->viewport_size.height / rasteriser->thread_dimensions.height };
+	Plt_Size thread_region_size = {
+		.width = rasteriser->viewport_size.width / rasteriser->thread_dimensions.width,
+		.height = rasteriser->viewport_size.height / rasteriser->thread_dimensions.height
+	};
+	
+	Plt_Size thread_region_size_remainder = {
+		.width = thread_region_size.width + rasteriser->viewport_size.width % rasteriser->thread_dimensions.width,
+		.height = thread_region_size.height + rasteriser->viewport_size.height % rasteriser->thread_dimensions.height
+	};
+	
 	for (unsigned int y = 0; y < rasteriser->thread_dimensions.height; ++y) {
 		for (unsigned int x = 0; x < rasteriser->thread_dimensions.width; ++x) {
 			unsigned int index = y * rasteriser->thread_dimensions.width + x;
 			rasteriser->thread_regions[index] = (Plt_Rect) {
 				.x = x * thread_region_size.width,
 				.y = y * thread_region_size.height,
-				.width = thread_region_size.width,
-				.height = thread_region_size.height
+				.width = (x == rasteriser->thread_dimensions.width - 1) ? thread_region_size_remainder.width : thread_region_size.width,
+				.height = (y == rasteriser->thread_dimensions.height - 1) ? thread_region_size_remainder.height : thread_region_size.height
 			};
 		}
 	}

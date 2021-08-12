@@ -1,6 +1,7 @@
 #include "platypus/platypus.h"
 
 #include <stdlib.h>
+#include <math.h>
 #include "SDL.h"
 
 #include "platypus/framebuffer/plt_framebuffer.h"
@@ -157,7 +158,10 @@ void plt_application_update_framebuffer(Plt_Application *application) {
 			.height = window_surface->h
 		};
 	} else {
-		Plt_Vector2i scaled_size = {window_surface->w / application->scale, window_surface->h / application->scale};
+		Plt_Vector2i scaled_size = {
+			ceilf((float)window_surface->w / (float)application->scale),
+			ceilf((float)window_surface->h / (float)application->scale)
+		};
 		
 		if (application->framebuffer_surface && ((application->framebuffer_surface->w != scaled_size.x) || (application->framebuffer_surface->h != scaled_size.y))) {
 			SDL_FreeSurface(application->framebuffer_surface);
