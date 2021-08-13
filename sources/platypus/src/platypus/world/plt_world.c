@@ -91,6 +91,33 @@ void plt_world_destroy(Plt_World **world) {
 	*world = NULL;
 }
 
+Plt_Object *plt_world_get_object_at_path(Plt_World *world, const char *path) {
+	unsigned int path_component_length;
+	char path_component[128];
+	bool is_last_component;
+	bool is_go_to_parent;
+	plt_object_path_get_component(path_component, path, &path_component_length, &is_last_component, &is_go_to_parent);
+	plt_assert(!is_go_to_parent, "'..' in path is invalid, world has no parent.\n");
+	
+	Plt_Linked_List_Node *node = world->object_list.root;
+	while (node) {
+		Plt_Object *object = node->data;
+		if (plt_world_get_object_parent(world, object) == NULL) {
+			bool match = (strcmp(object->name, path_component) == 0);
+			if (match) {
+				if (is_last_component) {
+					return object;
+				} else {
+					return plt_object_get_object_at_path(object, path + path_component_length + 1);
+				}
+			}
+		}
+		node = node->next;
+	}
+	
+	return NULL;
+}
+
 unsigned int plt_world_get_object_index(Plt_World *world, Plt_Object *object) {
 	return (object - world->object_storage);
 }
@@ -454,6 +481,10 @@ Plt_Registered_Object_Type *plt_world_get_registered_object_type(Plt_World *worl
 		}
 	}
 	return NULL;
+}
+
+Plt_Linked_List *plt_world_get_object_children(Plt_World *world, Plt_Object *object) {
+	return &plt_world_get_object_private_data(world, object)->children;
 }
 
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object) {

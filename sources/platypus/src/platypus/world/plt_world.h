@@ -55,6 +55,8 @@ void plt_world_render_ui(Plt_World *world, Plt_Frame_State frame_state, Plt_Rend
 Plt_Object_Private_Data *plt_world_get_object_private_data(Plt_World *world, Plt_Object *object);
 Plt_Registered_Object_Type *plt_world_get_registered_object_type(Plt_World *world, Plt_Object_Type_ID id);
 
+Plt_Linked_List *plt_world_get_object_children(Plt_World *world, Plt_Object *object);
+
 Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object);
 void plt_world_set_object_parent(Plt_World *world, Plt_Object *object, Plt_Object *parent);
 

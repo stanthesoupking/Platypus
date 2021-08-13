@@ -14,6 +14,96 @@ void plt_object_destroy(Plt_Object **object) {
 	plt_world_destroy_object((*object)->world, object, true);
 }
 
+void plt_object_path_get_component(char *dest_component, const char *src_path, unsigned int *component_length, bool *is_last_component, bool *is_go_to_parent) {
+	*component_length = 0;
+	*is_go_to_parent = false;
+	char c = *src_path;
+	
+	// Ignore leading '/'
+	if (c == '/') {
+		c = *(++src_path);
+	}
+		
+	while ((c != '\0') && (c != '/')) {
+		dest_component[(*component_length)++] = c;
+		c = *(++src_path);
+	}
+	dest_component[*component_length] = '\0';
+	*is_last_component = (c != '/');
+	
+	// Check if component is '..' or go to parent
+	if ((*component_length == 2) && (strcmp(dest_component, "..") == 0)) {
+		*is_go_to_parent = true;
+	}
+}
+
+Plt_Object *plt_object_get_object_at_path(Plt_Object *object, const char *path) {
+	Plt_Linked_List *children = plt_world_get_object_children(object->world, object);
+	Plt_Linked_List_Node *node = children->root;
+
+	unsigned int path_component_length;
+	char path_component[128];
+	bool is_last_component;
+	bool is_go_to_parent;
+	plt_object_path_get_component(path_component, path, &path_component_length, &is_last_component, &is_go_to_parent);
+	if ((path_component_length == 1) && (path_component[0] == '.')) {
+		if (is_last_component) {
+			return object;
+		} else {
+			return plt_object_get_object_at_path(object, path + path_component_length + 1);
+		}
+	}
+	
+	if (is_go_to_parent) {
+		return plt_object_get_parent(object);
+	}
+
+	while (node) {
+		Plt_Object *child = node->data;
+
+		bool match = (strcmp(child->name, path_component) == 0);
+		if (match) {
+			if (is_last_component) {
+				return child;
+			} else {
+				return plt_object_get_object_at_path(child, path + path_component_length + 1);
+			}
+		}
+
+		node = node->next;
+	}
+	
+	return NULL;
+}
+
+Plt_Object *plt_object_get_child_object_of_type(Plt_Object *object, Plt_Object_Type_ID type) {
+	Plt_Linked_List *children = plt_world_get_object_children(object->world, object);
+	Plt_Linked_List_Node *node = children->root;
+
+	while (node) {
+		Plt_Object *child = node->data;
+		if (child->type == type) {
+			return child;
+		} else {
+			Plt_Object *found_in_child = plt_object_get_child_object_of_type(child, type);
+			if (found_in_child) {
+				return found_in_child;
+			}
+		}
+		node = node->next;
+	}
+	return NULL;
+}
+
+Plt_Object *plt_object_get_root(Plt_Object *object) {
+	Plt_Object *parent = plt_object_get_parent(object);
+	if (parent == NULL) {
+		return object;
+	} else {
+		return plt_object_get_parent(parent);
+	}
+}
+
 Plt_Object *plt_object_get_parent(Plt_Object *object) {
 	return plt_world_get_object_parent(object->world, object);
 }

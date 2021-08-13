@@ -182,8 +182,14 @@ typedef struct Plt_Object_Type_Descriptor {
 Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
 void plt_world_destroy(Plt_World **world);
 
+Plt_Object *plt_world_get_object_at_path(Plt_World *world, const char *path);
+
 Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
 void plt_object_destroy(Plt_Object **object);
+
+Plt_Object *plt_object_get_object_at_path(Plt_Object *object, const char *path);
+Plt_Object *plt_object_get_child_object_of_type(Plt_Object *object, Plt_Object_Type_ID type);
+Plt_Object *plt_object_get_root(Plt_Object *object);
 
 Plt_Object *plt_object_get_parent(Plt_Object *object);
 void plt_object_set_parent(Plt_Object *object, Plt_Object *parent);
