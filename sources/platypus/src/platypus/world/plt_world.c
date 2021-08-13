@@ -460,6 +460,54 @@ Plt_Object *plt_world_get_object_parent(Plt_World *world, Plt_Object *object) {
 	return plt_world_get_object_private_data(world, object)->parent;
 }
 
+void plt_world_set_object_parent(Plt_World *world, Plt_Object *object, Plt_Object *parent) {
+	Plt_Linked_List_Node *node;
+	Plt_Linked_List_Node *object_node = NULL;
+	
+	Plt_Object_Private_Data *object_private = plt_world_get_object_private_data(world, object);
+	
+	if (object_private->parent == parent) {
+		// Object is already parented to the given parent object.
+		return;
+	}
+	
+	if (object_private->parent) {
+		Plt_Object_Private_Data *parent_private = plt_world_get_object_private_data(world, parent);
+
+		// Remove from children of original parent
+		node = parent_private->children.root;
+		if (node->data == object) {
+			parent_private->children.root = node->next;
+			node->next = NULL;
+			object_node = node;
+		} else {
+			while (node->next) {
+				if (node->next->data == object) {
+					object_node = node->next;
+					node->next = node->next->next;
+					object_node->next = NULL;
+				}
+				node = node->next;
+			}
+		}
+	} else {
+		object_node = malloc(sizeof(Plt_Linked_List_Node));
+		object_node->data = object;
+		object_node->next = NULL;
+	}
+	
+	if (parent) {
+		// Add as child in new parent object
+		Plt_Object_Private_Data *parent_private = plt_world_get_object_private_data(world, parent);
+		object_node->next = parent_private->children.root;
+		parent_private->children.root = object_node;
+	} else {
+		free(object_node);
+	}
+	
+	object_private->parent = parent;
+}
+
 Plt_Matrix4x4f plt_world_get_object_parent_matrix(Plt_World *world, Plt_Object *object) {
 	return plt_world_get_object_private_data(world, object)->parent_matrix;
 }

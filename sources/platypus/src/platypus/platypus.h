@@ -186,6 +186,8 @@ Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_T
 void plt_object_destroy(Plt_Object **object);
 
 Plt_Object *plt_object_get_parent(Plt_Object *object);
+void plt_object_set_parent(Plt_Object *object, Plt_Object *parent);
+
 Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object);
 Plt_Object **plt_object_get_collisions(Plt_Object *object, unsigned int *collision_count);
 
