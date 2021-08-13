@@ -195,6 +195,29 @@ Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
 	return (Plt_Vector4f){result.x, result.y, result.z, result.w};
 }
 
+Plt_Size plt_size_make(unsigned int width, unsigned int height) {
+	return (Plt_Size) {
+		.width = width,
+		.height = height
+	};
+}
+
+Plt_Vector2i plt_vector2i_make(int x, int y) {
+	return (Plt_Vector2i){ x, y };
+}
+
+Plt_Vector2f plt_vector2f_make(float x, float y) {
+	return (Plt_Vector2f){ x, y };
+}
+
+Plt_Vector3f plt_vector3f_make(float x, float y, float z) {
+	return (Plt_Vector3f){ x, y, z };
+}
+
+Plt_Vector4f plt_vector4f_make(float x, float y, float z, float w) {
+	return (Plt_Vector4f){ x, y, z, w };
+}
+
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b) {
 	return a.x * b.y + a.y * b.x;
 }
@@ -275,6 +298,14 @@ Plt_Vector3f plt_vector3f_lerp(Plt_Vector3f a, Plt_Vector3f b, float i) {
 		a.y * i + b.y * j,
 		a.z * i + b.z * j
 	};
+}
+
+float plt_vector3f_distance(Plt_Vector3f a, Plt_Vector3f b) {
+	return sqrtf(
+		(a.x - b.x) * (a.x - b.x) +
+		(a.y - b.y) * (a.y - b.y) +
+		(a.z - b.z) * (a.z - b.z)
+	);
 }
 
 float plt_math_rad2deg(float rad) {

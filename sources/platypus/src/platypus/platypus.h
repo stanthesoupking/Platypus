@@ -61,12 +61,10 @@ typedef enum Plt_Shape_Type {
 } Plt_Shape_Type;
 
 typedef struct Plt_Shape_Sphere {
-	Plt_Vector3f origin;
 	float radius;
 } Plt_Shape_Sphere;
 
 typedef struct Plt_Shape_Box {
-	Plt_Vector3f origin;
 	Plt_Vector3f size;
 } Plt_Shape_Box;
 
@@ -89,6 +87,14 @@ Plt_Transform plt_transform_rotate(Plt_Transform transform, Plt_Quaternion rotat
 Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale);
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
+
+Plt_Size plt_size_make(unsigned int width, unsigned int height);
+
+Plt_Vector2i plt_vector2i_make(int x, int y);
+
+Plt_Vector2f plt_vector2f_make(float x, float y);
+Plt_Vector3f plt_vector3f_make(float x, float y, float z);
+Plt_Vector4f plt_vector4f_make(float x, float y, float z, float w);
 
 float plt_vector2f_dot_product(Plt_Vector2f a, Plt_Vector2f b);
 float plt_vector3f_dot_product(Plt_Vector3f a, Plt_Vector3f b);
@@ -115,6 +121,8 @@ Plt_Vector2f plt_vector2f_divide_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b);
 
 Plt_Vector3f plt_vector3f_lerp(Plt_Vector3f a, Plt_Vector3f b, float i);
+
+float plt_vector3f_distance(Plt_Vector3f a, Plt_Vector3f b);
 
 float plt_math_rad2deg(float rad);
 float plt_math_deg2rad(float deg);
@@ -183,6 +191,9 @@ Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Typ
 void plt_world_destroy(Plt_World **world);
 
 Plt_Object *plt_world_get_object_at_path(Plt_World *world, const char *path);
+Plt_Object *plt_world_get_object_of_type(Plt_World *world, Plt_Object_Type_ID type);
+void plt_world_get_objects_of_type(Plt_World *world, Plt_Object_Type_ID type, Plt_Object **result, unsigned int result_capacity, unsigned int *result_count);
+
 
 Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
 void plt_object_destroy(Plt_Object **object);
@@ -195,6 +206,7 @@ Plt_Object *plt_object_get_parent(Plt_Object *object);
 void plt_object_set_parent(Plt_Object *object, Plt_Object *parent);
 
 Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object);
+Plt_Vector3f plt_object_get_global_position(Plt_Object *object);
 Plt_Object **plt_object_get_collisions(Plt_Object *object, unsigned int *collision_count);
 
 Plt_Vector3f plt_object_get_forward(Plt_Object *object);
@@ -206,9 +218,10 @@ Plt_Vector3f plt_object_get_right(Plt_Object *object);
 #define PLT_BASE_TYPE_ID_OFFSET 512
 const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
 const static Plt_Object_Type_ID Plt_Object_Type_Mesh_Renderer = PLT_BASE_TYPE_ID_OFFSET + 1;
-const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 2;
-const static Plt_Object_Type_ID Plt_Object_Type_Flying_Camera_Controller = PLT_BASE_TYPE_ID_OFFSET + 3;
-const static Plt_Object_Type_ID Plt_Object_Type_Collider = PLT_BASE_TYPE_ID_OFFSET + 4;
+const static Plt_Object_Type_ID Plt_Object_Type_Billboard_Renderer = PLT_BASE_TYPE_ID_OFFSET + 2;
+const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 3;
+const static Plt_Object_Type_ID Plt_Object_Type_Flying_Camera_Controller = PLT_BASE_TYPE_ID_OFFSET + 4;
+const static Plt_Object_Type_ID Plt_Object_Type_Collider = PLT_BASE_TYPE_ID_OFFSET + 5;
 
 // Mesh Renderer
 typedef struct Plt_Mesh Plt_Mesh;
@@ -218,6 +231,12 @@ typedef struct Plt_Object_Type_Mesh_Renderer_Data {
 	Plt_Texture *texture;
 	Plt_Color8 color;
 } Plt_Object_Type_Mesh_Renderer_Data;
+
+// Billboard Renderer
+typedef struct Plt_Object_Type_Billboard_Renderer_Data {
+	Plt_Vector2f size;
+	Plt_Texture *texture;
+} Plt_Object_Type_Billboard_Renderer_Data;
 
 // Camera
 typedef struct Plt_Object_Type_Camera_Data {
@@ -274,6 +293,7 @@ void plt_renderer_direct_draw_scaled_texture(Plt_Renderer *renderer, Plt_Rect re
 void plt_renderer_direct_draw_text(Plt_Renderer *renderer, Plt_Vector2i position, Plt_Font *font, const char *text);
 
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh);
+void plt_renderer_draw_billboard(Plt_Renderer *renderer, Plt_Vector2f size);
 
 void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type primitive_type);
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
@@ -289,7 +309,7 @@ void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 
-Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer);
+Plt_Size plt_renderer_get_framebuffer_size(Plt_Renderer *renderer);
 
 // MARK: Application
 
@@ -356,8 +376,19 @@ typedef enum Plt_Key {
 	Plt_Key_Escape = 1 << 32,
 } Plt_Key;
 
-Plt_Key plt_input_state_get_pressed_Keys(Plt_Input_State *state);
+typedef enum Plt_Mouse_Button {
+	Plt_Mouse_Button_None = 0,
+	Plt_Mouse_Button_Left = 1 << 0,
+	Plt_Mouse_Button_Middle = 1 << 1,
+	Plt_Mouse_Button_Right = 1 << 2
+} Plt_Mouse_Button;
+
+Plt_Key plt_input_state_get_pressed_keys(Plt_Input_State *state);
+Plt_Mouse_Button plt_input_state_get_pressed_mouse_buttons(Plt_Input_State *state);
 Plt_Vector2f plt_input_state_get_mouse_movement(Plt_Input_State *state);
+
+bool plt_input_state_is_key_down(Plt_Input_State *state, Plt_Key key);
+bool plt_input_state_is_mouse_button_down(Plt_Input_State *state, Plt_Mouse_Button button);
 
 // MARK: Mesh
 
@@ -407,5 +438,6 @@ Plt_Font *plt_font_load(const char *path);
 Plt_Texture *plt_font_get_texture(Plt_Font *font);
 Plt_Size plt_font_get_character_size(Plt_Font *font);
 Plt_Rect plt_font_get_rect_for_character(Plt_Font *font, char c);
+Plt_Size plt_font_get_size_of_string(Plt_Font *font, const char *string);
 
 #endif

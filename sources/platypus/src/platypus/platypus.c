@@ -13,6 +13,7 @@
 #include "platypus/renderer/pipeline/plt_triangle_rasteriser.c"
 #include "platypus/renderer/pipeline/plt_vertex_processor.c"
 #include "platypus/texture/plt_texture.c"
+#include "platypus/world/base_types/billboard_renderer/plt_object_type_billboard_renderer.c"
 #include "platypus/world/base_types/camera/plt_object_type_camera.c"
 #include "platypus/world/base_types/collider/plt_object_type_collider.c"
 #include "platypus/world/base_types/mesh_renderer/plt_object_type_mesh_renderer.c"

@@ -65,7 +65,7 @@ Plt_Application *plt_application_create(const char *title, unsigned int width, u
 	application->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, flags);
 	plt_assert(application->window, "SDL window creation failed.\n");
 
-	// SDL_CaptureMouse(SDL_TRUE);
+	SDL_CaptureMouse(SDL_TRUE);
 	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	application->should_quit = false;
@@ -123,6 +123,10 @@ void plt_application_update(Plt_Application *application) {
 		} else if (event.type == SDL_MOUSEMOTION) {
 			application->input_state.mouse_movement.x = event.motion.xrel;
 			application->input_state.mouse_movement.y = event.motion.yrel;
+		} else if (event.type == SDL_MOUSEBUTTONDOWN) {
+			plt_input_state_set_mouse_button_down(&application->input_state, plt_mouse_button_from_sdl_mouse_index(event.button.button));
+		} else if (event.type == SDL_MOUSEBUTTONUP) {
+			plt_input_state_set_mouse_button_up(&application->input_state, plt_mouse_button_from_sdl_mouse_index(event.button.button));
 		}
 	}
 

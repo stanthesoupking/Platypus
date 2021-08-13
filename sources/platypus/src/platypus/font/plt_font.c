@@ -1,5 +1,7 @@
 #include "plt_font.h"
 
+#include <string.h>
+
 const int PLT_FONT_CHARACTERS_PER_ROW = 16;
 const int PLT_FONT_CHARACTERS_PER_COLUMN = 16;
 
@@ -51,5 +53,15 @@ Plt_Rect plt_font_get_rect_for_character(Plt_Font *font, char c) {
 		.y = (i / PLT_FONT_CHARACTERS_PER_ROW) * character_size.height,
 		.width = character_size.width,
 		.height = character_size.height
+	};
+}
+
+Plt_Size plt_font_get_size_of_string(Plt_Font *font, const char *string) {
+	unsigned int length = strlen(string);
+	Plt_Size char_size = plt_font_get_character_size(font);
+
+	return (Plt_Size) {
+		.width = length * char_size.width,
+		.height = char_size.height
 	};
 }

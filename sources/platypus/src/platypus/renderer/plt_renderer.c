@@ -377,6 +377,74 @@ void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	}
 }
 
+void plt_renderer_draw_billboard(Plt_Renderer *renderer, Plt_Vector2f size) {
+	Plt_Vector4f clipspace = plt_vector4f_make(0, 0, 0, 1);
+	clipspace = plt_matrix_multiply_vector4f(renderer->mvp_matrix, clipspace);
+	
+	if (clipspace.w < 0) {
+		// Behind camera, don't draw.
+		return;
+	}
+	
+	Plt_Vector3f ndc = plt_vector3f_make(clipspace.x / clipspace.w, clipspace.y / clipspace.w, clipspace.z / clipspace.w);
+	
+	Plt_Size framebuffer_size = plt_renderer_get_framebuffer_size(renderer);
+	Plt_Vector2i screen_space = plt_vector2i_make((ndc.x * 0.5f + 0.5f) * framebuffer_size.width, (ndc.y * 0.5f + 0.5f) * framebuffer_size.height);
+	
+	// TODO: Get camera FOV
+	float perspective_adjustment = sinf(plt_math_deg2rad(50.0f)) / clipspace.z;
+	Plt_Vector2f perspective_size = plt_vector2f_make(size.x * perspective_adjustment * 0.5f, size.y * perspective_adjustment * 0.5f);
+//	perspective_size = plt_vector2f_make(0.1f, 0.1f);
+	
+	Plt_Vector2i bounds_min = {
+		(perspective_size.x * -(int)framebuffer_size.width) + screen_space.x,
+		(perspective_size.x * -(int)framebuffer_size.width) + screen_space.y
+	};
+	Plt_Vector2i bounds_max = {
+		(perspective_size.x * framebuffer_size.width) + screen_space.x,
+		(perspective_size.x * framebuffer_size.width) + screen_space.y
+	};
+	
+	Plt_Texture *texture = renderer->bound_texture;
+	Plt_Vector2f p_inc = { 0.0f, 0.0f };
+	if (texture) {
+		p_inc = (Plt_Vector2f){ 1.0f / (float)(perspective_size.x * framebuffer_size.width * 2.0f), 1.0f / (float)(perspective_size.y * framebuffer_size.width * 2.0f) };
+	}
+	
+	Plt_Color8 *pixels = renderer->framebuffer.pixels;
+	float *depth_buffer = renderer->depth_buffer;
+	Plt_Color8 render_color = plt_color8_make(0, 255, 0, 255);
+	Plt_Vector2f tex_pos = { 0.0f, 0.0f };
+	
+	Plt_Vector2i clamped_bounds_min = {
+		plt_clamp(bounds_min.x, 0, framebuffer_size.width),
+		plt_clamp(bounds_min.y, 0, framebuffer_size.height)
+	};
+	Plt_Vector2i clamped_bounds_max = {
+		plt_clamp(bounds_max.x, 0, framebuffer_size.width),
+		plt_clamp(bounds_max.y, 0, framebuffer_size.height)
+	};
+	
+	float initial_x = plt_max((clamped_bounds_min.x - bounds_min.x) * p_inc.x, 0);
+	tex_pos.y = plt_max((clamped_bounds_min.y - bounds_min.y) * p_inc.x, 0);
+	
+	for (int y = clamped_bounds_min.y; y < clamped_bounds_max.y; ++y) {
+		tex_pos.x = initial_x;
+		for (int x = clamped_bounds_min.x; x < clamped_bounds_max.x; ++x) {
+			Plt_Color8 c = plt_texture_sample(texture, tex_pos);
+			if (c.a > 0) {
+				float depth_sample = depth_buffer[y * framebuffer_size.width + x];
+				if (depth_sample > clipspace.z) {
+					depth_buffer[y * framebuffer_size.width + x] = clipspace.z;
+					pixels[y * framebuffer_size.width + x] = c;
+				}
+			}
+			tex_pos.x += p_inc.x;
+		}
+		tex_pos.y += p_inc.y;
+	}
+}
+
 void plt_renderer_draw_point(Plt_Renderer *renderer, Plt_Vector2f p, Plt_Color8 color) {
 	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
@@ -470,6 +538,6 @@ void plt_renderer_set_projection_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f m
 	plt_renderer_update_mvp(renderer);
 }
 
-Plt_Vector2i plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {
-	return (Plt_Vector2i) { renderer->framebuffer.width, renderer->framebuffer.height };
+Plt_Size plt_renderer_get_framebuffer_size(Plt_Renderer *renderer) {
+	return (Plt_Size) { renderer->framebuffer.width, renderer->framebuffer.height };
 }

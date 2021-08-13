@@ -111,8 +111,7 @@ void RASTER_FUNC_NAME(Plt_Triangle_Rasteriser *rasteriser, Plt_Rect region, unsi
 					depth += pos[1].z * weights.y;
 					depth += pos[2].z * weights.z;
 
-					float depth_sample = depth_buffer[framebuffer_pixel_index];
-					if ((depth < 0) || (depth_sample < depth)) {
+					if (depth_buffer[framebuffer_pixel_index] < depth) {
 						goto end;
 					}
 					depth_buffer[framebuffer_pixel_index] = depth;

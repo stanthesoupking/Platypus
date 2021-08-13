@@ -118,6 +118,31 @@ Plt_Object *plt_world_get_object_at_path(Plt_World *world, const char *path) {
 	return NULL;
 }
 
+Plt_Object *plt_world_get_object_of_type(Plt_World *world, Plt_Object_Type_ID type) {
+	Plt_Linked_List_Node *node = world->object_list.root;
+	while (node) {
+		Plt_Object *object = node->data;
+		if (object->type == type) {
+			return object;
+		}
+		node = node->next;
+	}
+
+	return NULL;
+}
+
+void plt_world_get_objects_of_type(Plt_World *world, Plt_Object_Type_ID type, Plt_Object **result, unsigned int result_capacity, unsigned int *result_count) {
+	Plt_Linked_List_Node *node = world->object_list.root;
+	*result_count = 0;
+	while (node && (*result_count < result_capacity)) {
+		Plt_Object *object = node->data;
+		if (object->type == type) {
+			result[(*result_count)++] = object;
+		}
+		node = node->next;
+	}
+}
+
 unsigned int plt_world_get_object_index(Plt_World *world, Plt_Object *object) {
 	return (object - world->object_storage);
 }
@@ -212,9 +237,11 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object, bool includ
 	}
 	
 	// Remove from object list
+	bool was_removed = false;
 	node = world->object_list.root;
 	if (node->data == *object) {
 		world->object_list.root = node->next;
+		was_removed = true;
 		free(node);
 	} else {
 		while (node->next != NULL) {
@@ -222,11 +249,16 @@ void plt_world_destroy_object(Plt_World *world, Plt_Object **object, bool includ
 				Plt_Linked_List_Node *removed = node->next;
 				node->next = node->next->next;
 				free(removed);
+				was_removed = true;
 				break;
 			}
 			node = node->next;
 		}
 	}
+	if (!was_removed) {
+		return;
+	}
+	plt_assert(was_removed, "Failed deleting object");
 	
 	// Remove type data
 	if ((*object)->type != Plt_Object_Type_None) {
@@ -503,7 +535,7 @@ void plt_world_set_object_parent(Plt_World *world, Plt_Object *object, Plt_Objec
 	}
 	
 	if (object_private->parent) {
-		Plt_Object_Private_Data *parent_private = plt_world_get_object_private_data(world, parent);
+		Plt_Object_Private_Data *parent_private = plt_world_get_object_private_data(world, object_private->parent);
 
 		// Remove from children of original parent
 		node = parent_private->children.root;

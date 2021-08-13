@@ -10,7 +10,7 @@ void _flying_camera_controller_type_update(Plt_Object *object, void *type_data, 
 
 	float adjusted_speed = data->speed * 0.01f * state.delta_time;
 
-	Plt_Key pressed = plt_input_state_get_pressed_Keys(state.input_state);
+	Plt_Key pressed = plt_input_state_get_pressed_keys(state.input_state);
 	if (pressed & Plt_Key_W) {
 		object->transform.translation = plt_vector3f_add(object->transform.translation, plt_vector3f_multiply_scalar(forwards, adjusted_speed));
 	}

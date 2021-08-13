@@ -2,12 +2,13 @@
 
 #include "SDL.h"
 
-Plt_Key plt_input_state_get_pressed_Keys(Plt_Input_State *state) {
+Plt_Key plt_input_state_get_pressed_keys(Plt_Input_State *state) {
 	return state->pressed_keys;
 }
 
 void plt_input_state_initialise(Plt_Input_State *state) {
 	state->pressed_keys = 0;
+	state->pressed_mouse_buttons = 0;
 }
 
 void plt_input_state_set_key_down(Plt_Input_State *state, Plt_Key key) {
@@ -16,6 +17,14 @@ void plt_input_state_set_key_down(Plt_Input_State *state, Plt_Key key) {
 
 void plt_input_state_set_key_up(Plt_Input_State *state, Plt_Key key) {
 	state->pressed_keys &= ~((long long)key);
+}
+
+void plt_input_state_set_mouse_button_down(Plt_Input_State *state, Plt_Mouse_Button button) {
+	state->pressed_mouse_buttons |= button;
+}
+
+void plt_input_state_set_mouse_button_up(Plt_Input_State *state, Plt_Mouse_Button button) {
+	state->pressed_mouse_buttons &= ~((unsigned int)button);
 }
 
 Plt_Key plt_key_from_sdl_keycode(SDL_Keycode keycode) {
@@ -57,6 +66,28 @@ Plt_Key plt_key_from_sdl_keycode(SDL_Keycode keycode) {
 	}
 }
 
+Plt_Mouse_Button plt_mouse_button_from_sdl_mouse_index(unsigned int index) {
+	const Plt_Mouse_Button lookup[5] = {
+		Plt_Mouse_Button_None,
+		Plt_Mouse_Button_Left,
+		Plt_Mouse_Button_Middle,
+		Plt_Mouse_Button_Right,
+		Plt_Mouse_Button_None
+	};
+	return lookup[plt_min(index, 4)];
+}
+
+Plt_Mouse_Button plt_input_state_get_pressed_mouse_buttons(Plt_Input_State *state) {
+	return Plt_Mouse_Button_None;
+}
+
 Plt_Vector2f plt_input_state_get_mouse_movement(Plt_Input_State *state) {
 	return state->mouse_movement;
+}
+
+bool plt_input_state_is_key_down(Plt_Input_State *state, Plt_Key key) {
+	return (state->pressed_keys & key) != 0;
+}
+bool plt_input_state_is_mouse_button_down(Plt_Input_State *state, Plt_Mouse_Button button) {
+	return (state->pressed_mouse_buttons & button) != 0;
 }

@@ -100,7 +100,7 @@ Plt_Object *plt_object_get_root(Plt_Object *object) {
 	if (parent == NULL) {
 		return object;
 	} else {
-		return plt_object_get_parent(parent);
+		return plt_object_get_root(parent);
 	}
 }
 
@@ -109,13 +109,25 @@ Plt_Object *plt_object_get_parent(Plt_Object *object) {
 }
 
 void plt_object_set_parent(Plt_Object *object, Plt_Object *parent) {
-	plt_assert(object->world == parent->world, "Object parents must be in the same world as the child object.\n");
+	if (parent) {
+		plt_assert(object->world == parent->world, "Object parents must be in the same world as the child object.\n");
+	}
 	plt_world_set_object_parent(object->world, object, parent);
 }
 
 Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object) {
 	Plt_Matrix4x4f parent_matrix = plt_world_get_object_parent_matrix(object->world, object);
 	return plt_matrix_multiply(parent_matrix, plt_transform_to_matrix(object->transform));
+}
+
+Plt_Vector3f plt_object_get_global_position(Plt_Object *object) {
+	Plt_Matrix4x4f model = plt_object_get_model_matrix(object);
+	
+	return (Plt_Vector3f){
+		.x = model.columns[3][0],
+		.y = model.columns[3][1],
+		.z = model.columns[3][2],
+	};
 }
 
 Plt_Object **plt_object_get_collisions(Plt_Object *object, unsigned int *collision_count) {
