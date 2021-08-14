@@ -255,6 +255,11 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		bc_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(0), simd_int4_create_scalar(0));
 		triangle_area[o] = bc_initial[o].x + bc_initial[o].y + bc_initial[o].z;
 		
+		// Degnerate triangle
+		if (triangle_area == 0) {
+			continue;
+		}
+		
 		simd_int4 bc_increment_x_result, bc_increment_y_result;
 		plt_triangle_processor_get_c_increment(a_x, a_y, b_x, b_y, &bc_increment_x_result, &bc_increment_y_result);
 		bc_increment_x[o] = bc_increment_x_result;

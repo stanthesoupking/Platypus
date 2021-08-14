@@ -179,7 +179,7 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 					Plt_Color8 *px = py;
 					float *dx = dy;
 					for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
-						if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0) && ((bc_x.x | bc_x.y | bc_x.z) != 0)) {
+						if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) {
 							simd_float4 weights = simd_float4_create(bc_x.x / triangle_area, bc_x.y / triangle_area, bc_x.z / triangle_area, 0.0f);
 							
 							float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z;
