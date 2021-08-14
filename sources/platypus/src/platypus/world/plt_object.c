@@ -1,6 +1,7 @@
 #include "plt_object.h"
 
 #include "plt_world.h"
+#include "platypus/base/plt_macros.h"
 
 Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name) {
 	plt_assert(world, "An object can't be created without a world.");

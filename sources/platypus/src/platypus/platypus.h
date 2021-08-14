@@ -89,6 +89,7 @@ Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale);
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 Plt_Size plt_size_make(unsigned int width, unsigned int height);
+Plt_Rect plt_rect_make(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
 Plt_Vector2i plt_vector2i_make(int x, int y);
 
@@ -103,20 +104,25 @@ Plt_Vector3f plt_vector3f_cross(Plt_Vector3f a, Plt_Vector3f b);
 
 Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v);
 
+Plt_Vector2i plt_vector2i_add(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b);
 Plt_Vector3f plt_vector3f_add(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
 
+Plt_Vector2i plt_vector2i_subtract(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector3f plt_vector3f_subtract(Plt_Vector3f a, Plt_Vector3f b);
 
+Plt_Vector2i plt_vector2i_multiply(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector2f plt_vector2f_multiply(Plt_Vector2f a, Plt_Vector2f b);
 Plt_Vector3f plt_vector3f_multiply(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_multiply(Plt_Vector4f a, Plt_Vector4f b);
 
+Plt_Vector2i plt_vector2i_multiply_scalar(Plt_Vector2i a, int b);
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b);
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b);
 
+Plt_Vector2i plt_vector2i_divide_scalar(Plt_Vector2i a, int b);
 Plt_Vector2f plt_vector2f_divide_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b);
 
@@ -426,6 +432,8 @@ Plt_Color8 plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
 void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value);
 
 Plt_Size plt_texture_get_size(Plt_Texture *texture);
+Plt_Vector2f plt_texture_get_texel_size(Plt_Texture *texture);
+Plt_Color8 *plt_texture_get_pixels(Plt_Texture *texture);
 
 // MARK: Font
 

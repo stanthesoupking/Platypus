@@ -196,7 +196,7 @@ void player_shoot_projectile(Plt_Object *player) {
 }
 
 int main(int argc, char **argv) {
-	Plt_Application *app = plt_application_create("Platypus - Shooter", 860, 640, 2, Plt_Application_Option_Fullscreen);
+	Plt_Application *app = plt_application_create("Platypus - Shooter", 860, 640, 1, Plt_Application_Option_Fullscreen);
 	plt_application_set_target_fps(app, 120);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 	
@@ -310,11 +310,11 @@ int main(int argc, char **argv) {
 	camera_type_data->near_z = 0.1f;
 	camera_type_data->far_z = 100.0f;
 	
-	int count = 3;
+	int count = 1;
 	for (int x = -count; x < count; ++x) {
 		for (int z = -count; z < count; ++z) {
 			Plt_Object *enemy_object = plt_object_create(world, NULL, Plt_Object_Type_Enemy, "enemy");
-			enemy_object->transform.translation = plt_vector3f_make(x, 0.0f, z + 10);
+			enemy_object->transform.translation = plt_vector3f_make(x, 0.0f, z - 10);
 			enemy_object->transform.rotation = plt_quaternion_create_from_euler(plt_vector3f_make(PLT_PI, 0, 0));
 			enemy_object->transform.scale = plt_vector3f_make(0.5f, 0.5f, 0.5f);
 			Plt_Object *enemy_renderer = plt_object_create(world, enemy_object, Plt_Object_Type_Mesh_Renderer, "renderer");

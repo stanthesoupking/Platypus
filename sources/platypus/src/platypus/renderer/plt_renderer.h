@@ -1,6 +1,7 @@
 #pragma once
 #include "platypus/platypus.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
+#include "platypus/base/allocation/plt_linear_allocator.h"
 
 typedef struct Plt_Vertex_Processor Plt_Vertex_Processor;
 typedef struct Plt_Triangle_Processor Plt_Triangle_Processor;
@@ -8,6 +9,8 @@ typedef struct Plt_Triangle_Rasteriser Plt_Triangle_Rasteriser;
 typedef struct Plt_Renderer {
 	Plt_Application *application;
 	Plt_Framebuffer framebuffer;
+
+	Plt_Linear_Allocator *frame_allocator;
 
 	Plt_Vertex_Processor *vertex_processor;
 	Plt_Triangle_Processor *triangle_processor;
@@ -38,3 +41,4 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 void plt_renderer_destroy(Plt_Renderer **renderer);
 
 void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer framebuffer);
+void plt_renderer_rasterise_triangles(Plt_Renderer *renderer);

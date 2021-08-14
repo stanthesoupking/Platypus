@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include "platypus/mesh/plt_mesh.h"
+#include "platypus/base/allocation/plt_linear_allocator.h"
 
 typedef struct Plt_Vertex_Processor_Working_Buffer {
 	unsigned int vertex_capacity;
@@ -116,7 +117,7 @@ void plt_vertex_processor_resize_working_buffer(Plt_Vertex_Processor *processor,
 	processor->working_buffer.vertex_capacity = capacity;
 }
 
-Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Processor *processor, Plt_Mesh *mesh, Plt_Vector2i viewport, Plt_Matrix4x4f model, Plt_Matrix4x4f mvp) {
+Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Processor *processor, Plt_Linear_Allocator *allocator, Plt_Mesh *mesh, Plt_Vector2i viewport, Plt_Matrix4x4f model, Plt_Matrix4x4f mvp) {
 	unsigned int vertex_count = mesh->vertex_count;
 
 	if (processor->working_buffer.vertex_capacity < vertex_count) {
@@ -134,15 +135,15 @@ Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Process
 	float *model_normals_z = mesh->normal_z;
 
 	// Output
-	float *clipspace_x = processor->working_buffer.clipspace_x;
-	float *clipspace_y = processor->working_buffer.clipspace_y;
-	float *clipspace_z = processor->working_buffer.clipspace_z;
-	float *clipspace_w = processor->working_buffer.clipspace_w;
-	int *screen_positions_x = processor->working_buffer.screen_positions_x;
-	int *screen_positions_y = processor->working_buffer.screen_positions_y;
-	float *world_normals_x = processor->working_buffer.world_normals_x;
-	float *world_normals_y = processor->working_buffer.world_normals_y;
-	float *world_normals_z = processor->working_buffer.world_normals_z;
+	float *clipspace_x = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *clipspace_y = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *clipspace_z = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *clipspace_w = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	int *screen_positions_x = plt_linear_allocator_alloc(allocator, sizeof(int) * vertex_count);
+	int *screen_positions_y = plt_linear_allocator_alloc(allocator, sizeof(int) * vertex_count);
+	float *world_normals_x = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *world_normals_y = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *world_normals_z = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
 
 	for (unsigned int i = 0; i < vertex_count; ++i) {
 		Plt_Vector4f input = { model_positions_x[i], model_positions_y[i], model_positions_z[i], 1.0f };

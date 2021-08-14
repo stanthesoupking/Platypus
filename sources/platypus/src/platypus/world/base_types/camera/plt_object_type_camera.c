@@ -1,6 +1,7 @@
 #include "plt_object_type_camera.h"
 
 #include <stdlib.h>
+#include "platypus/base/plt_macros.h"
 
 Plt_Matrix4x4f plt_object_type_camera_get_view_matrix(Plt_Object *camera) {
 	plt_assert(camera->type == Plt_Object_Type_Camera, "Object must be of type 'Plt_Object_Type_Camera'.\n");
