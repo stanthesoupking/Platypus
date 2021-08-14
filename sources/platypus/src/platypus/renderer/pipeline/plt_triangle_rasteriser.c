@@ -51,7 +51,7 @@ Plt_Triangle_Rasteriser *plt_triangle_rasteriser_create(Plt_Renderer *renderer, 
 	// Create threads
 	unsigned int platform_core_count = plt_platform_get_core_count();
 	plt_assert(platform_core_count > 0, "No cores detected on device\n");
-//	platform_core_count = 1;
+	platform_core_count = 1;
 	rasteriser->thread_pool = plt_thread_pool_create(_raster_thread, rasteriser, platform_core_count);
 	
 	rasteriser->triangle_bins = NULL;
@@ -141,7 +141,7 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 				float *dx = dy;
 				for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
 					*(px++) = clear_color;
-					*(dx++) = INFINITY;
+					*(dx++) = 0.0f;
 				}
 				py += viewport_size.width;
 				dy += viewport_size.width;
@@ -161,6 +161,7 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 				simd_int4 bc_initial = data_buffer->bc_initial[entry.index];
 				simd_int4 bc_increment_x = data_buffer->bc_increment_x[entry.index];
 				simd_int4 bc_increment_y = data_buffer->bc_increment_y[entry.index];
+				float triangle_area = data_buffer->triangle_area[entry.index];
 				
 				float depth0 = data_buffer->depth0[entry.index];
 				float depth1 = data_buffer->depth1[entry.index];
@@ -179,11 +180,10 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 					float *dx = dy;
 					for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
 						if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0) && ((bc_x.x | bc_x.y | bc_x.z) != 0)) {
-							float sum = bc_x.x + bc_x.y + bc_x.z;
-							simd_float4 weights = simd_float4_create(bc_x.x / sum, bc_x.y / sum, bc_x.z / sum, 0.0f);
+							simd_float4 weights = simd_float4_create(bc_x.x / triangle_area, bc_x.y / triangle_area, bc_x.z / triangle_area, 0.0f);
 							
 							float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z;
-							if (depth < *dx) {
+							if (depth > *dx) {
 								*dx = depth;
 								Plt_Vector2i tex_coord = {
 									.x = (uv0.x * weights.x + uv1.x * weights.y + uv2.x * weights.z) * texture_size.width,
@@ -193,6 +193,7 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 								*px = debug_color;
 								#else
 								*px = plt_texture_get_pixel(texture, tex_coord);
+//								*px = plt_color8_make(depth * 255, depth * 255, depth * 255, 255);
 								#endif
 							}
 						}

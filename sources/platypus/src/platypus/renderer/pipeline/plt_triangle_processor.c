@@ -167,6 +167,7 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	simd_int4 *bc_initial = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
 	simd_int4 *bc_increment_x = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
 	simd_int4 *bc_increment_y = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
+	float *triangle_area = plt_linear_allocator_alloc(allocator, sizeof(float) * triangle_count);
 	
 	// Depth
 	float *depth0 = plt_linear_allocator_alloc(allocator, sizeof(float) * triangle_count);
@@ -252,6 +253,7 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		
 		// Barycentric calculations
 		bc_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(0), simd_int4_create_scalar(0));
+		triangle_area[o] = bc_initial[o].x + bc_initial[o].y + bc_initial[o].z;
 		
 		simd_int4 bc_increment_x_result, bc_increment_y_result;
 		plt_triangle_processor_get_c_increment(a_x, a_y, b_x, b_y, &bc_increment_x_result, &bc_increment_y_result);
@@ -264,9 +266,9 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		uv2[o] = plt_vector2f_make(uv_x[v + 2], uv_y[v + 2]);
 		
 		// Depth
-		depth0[o] = clipspace_z[v];
-		depth1[o] = clipspace_z[v + 1];
-		depth2[o] = clipspace_z[v + 2];
+		depth0[o] = 1.0f / clipspace_z[v];
+		depth1[o] = 1.0f / clipspace_z[v + 1];
+		depth2[o] = 1.0f / clipspace_z[v + 2];
 		
 		++output_triangle_count;
 	}
@@ -275,6 +277,7 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	data_buffer->bc_initial = bc_initial;
 	data_buffer->bc_increment_x = bc_increment_x;
 	data_buffer->bc_increment_y = bc_increment_y;
+	data_buffer->triangle_area = triangle_area;
 	data_buffer->depth0 = depth0;
 	data_buffer->depth1 = depth1;
 	data_buffer->depth2 = depth2;

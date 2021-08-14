@@ -15,6 +15,7 @@ typedef struct Plt_Triangle_Bin_Data_Buffer {
 	simd_int4 *bc_initial;
 	simd_int4 *bc_increment_x;
 	simd_int4 *bc_increment_y;
+	float *triangle_area;
 	
 	// Depth
 	float *depth0;

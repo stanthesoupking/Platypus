@@ -21,7 +21,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	Plt_Renderer *renderer = malloc(sizeof(Plt_Renderer));
 	
 	renderer->application = application;
-	renderer->frame_allocator = plt_linear_allocator_create(1024 * 1024 * 64); // 64MB
+	renderer->frame_allocator = plt_linear_allocator_create(1024 * 1024 * 128); // 64MB
 
 	renderer->vertex_processor = plt_vertex_processor_create();
 	renderer->triangle_processor = plt_triangle_processor_create();
