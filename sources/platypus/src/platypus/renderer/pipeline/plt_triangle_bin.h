@@ -16,7 +16,12 @@ typedef struct Plt_Triangle_Bin_Data_Buffer {
 	simd_int4 *bc_increment_x;
 	simd_int4 *bc_increment_y;
 	
-	// Texture coordinates (in pixels)
+	// Depth
+	float *depth0;
+	float *depth1;
+	float *depth2;
+	
+	// Texture coordinates
 	Plt_Vector2f *uv0;
 	Plt_Vector2f *uv1;
 	Plt_Vector2f *uv2;

@@ -93,11 +93,21 @@ void plt_triangle_rasteriser_update_depth_buffer(Plt_Triangle_Rasteriser *raster
 	rasteriser->depth_buffer = depth_buffer;
 }
 
+#define RENDER_PIXEL \
+if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0) && ((bc_x.x | bc_x.y | bc_x.z) != 0)) { \
+	float sum = bc_x.x + bc_x.y + bc_x.z; \
+	simd_float4 weights = simd_float4_create(bc_x.x / sum, bc_x.y / sum, bc_x.z / sum, 0.0f); \
+	*px = plt_color8_make(weights.x * 255, weights.y * 255, weights.z * 255, 255); \
+} \
+px++; \
+bc_x = simd_int4_add(bc_x, bc_increment_x); \
+
 void *_raster_thread(unsigned int thread_id, void *thread_data) {
 	Plt_Triangle_Rasteriser *rasteriser = thread_data;
 	Plt_Renderer *renderer = rasteriser->renderer;
 	
 	Plt_Color8 *pixels = rasteriser->framebuffer.pixels;
+	float *depth_buffer = rasteriser->depth_buffer;
 	Plt_Size viewport_size = rasteriser->viewport_size;
 	
 	Plt_Color8 clear_color = plt_color8_make(100, 120, 160, 255);
@@ -111,7 +121,6 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 		plt_color8_make(0, 255, 255, 255),
 	};
 	Plt_Color8 debug_color = debug_colors[thread_id % 6];
-	debug_color = plt_color8_make(255, 255, 255, 255);
 	
 	unsigned int bin_index;
 	while (plt_thread_safe_stack_pop(rasteriser->triangle_bin_stack, &bin_index)) {
@@ -120,21 +129,27 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 		// Render triangle bin
 		Plt_Rect bin_region = plt_rect_make((bin_index % rasteriser->triangle_bin_dimensions.width) * PLT_TRIANGLE_BIN_SIZE, (bin_index / rasteriser->triangle_bin_dimensions.width) * PLT_TRIANGLE_BIN_SIZE, PLT_TRIANGLE_BIN_SIZE, PLT_TRIANGLE_BIN_SIZE);
 		
+		Plt_Color8 *pixel_initial = pixels + bin_region.y * viewport_size.width + bin_region.x;
+		float *depth_initial = depth_buffer + bin_region.y * viewport_size.width + bin_region.x;
+		
 		// Step 1: Clear tile with color
 		{
-			Plt_Color8 *py = pixels + bin_region.y * viewport_size.width + bin_region.x;
+			Plt_Color8 *py = pixel_initial;
+			float *dy = depth_initial;
 			for (unsigned int y = 0; y < PLT_TRIANGLE_BIN_SIZE; ++y) {
 				Plt_Color8 *px = py;
+				float *dx = dy;
 				for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
-					*(px++) = clear_color;//debug_color;
+					*(px++) = clear_color;
+					*(dx++) = INFINITY;
 				}
 				py += viewport_size.width;
+				dy += viewport_size.width;
 			}
 		}
 		
 		// Step 2: Rasterise triangles in bin
 		{
-			Plt_Color8 *pixel_initial = pixels + bin_region.y * viewport_size.width + bin_region.x;
 			for (unsigned int i = 0; i < bin.triangle_count; ++i) {
 				Plt_Triangle_Bin_Entry entry = bin.entries[i];
 				Plt_Triangle_Bin_Data_Buffer *data_buffer = entry.buffer;
@@ -147,25 +162,46 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 				simd_int4 bc_increment_x = data_buffer->bc_increment_x[entry.index];
 				simd_int4 bc_increment_y = data_buffer->bc_increment_y[entry.index];
 				
+				float depth0 = data_buffer->depth0[entry.index];
+				float depth1 = data_buffer->depth1[entry.index];
+				float depth2 = data_buffer->depth2[entry.index];
+				
 				Plt_Vector2f uv0 = data_buffer->uv0[entry.index];
 				Plt_Vector2f uv1 = data_buffer->uv1[entry.index];
 				Plt_Vector2f uv2 = data_buffer->uv2[entry.index];
 				
 				simd_int4 bc_y = simd_int4_add(simd_int4_add(bc_initial, simd_int4_multiply(bc_increment_y, simd_int4_create_scalar(bin_region.y))), simd_int4_multiply(bc_increment_x, simd_int4_create_scalar(bin_region.x)));
 				Plt_Color8 *py = pixel_initial;
+				float *dy = depth_initial;
 				for (unsigned int y = 0; y < PLT_TRIANGLE_BIN_SIZE; ++y) {
 					simd_int4 bc_x = bc_y;
 					Plt_Color8 *px = py;
+					float *dx = dy;
 					for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
 						if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0) && ((bc_x.x | bc_x.y | bc_x.z) != 0)) {
 							float sum = bc_x.x + bc_x.y + bc_x.z;
 							simd_float4 weights = simd_float4_create(bc_x.x / sum, bc_x.y / sum, bc_x.z / sum, 0.0f);
-							*px = plt_color8_make(weights.x * 255, weights.y * 255, weights.z * 255, 255);
+							
+							float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z;
+							if (depth < *dx) {
+								*dx = depth;
+								Plt_Vector2i tex_coord = {
+									.x = (uv0.x * weights.x + uv1.x * weights.y + uv2.x * weights.z) * texture_size.width,
+									.y = (uv0.y * weights.x + uv1.y * weights.y + uv2.y * weights.z) * texture_size.height
+								};
+								#if PLT_DEBUG_RASTER_THREAD_ID
+								*px = debug_color;
+								#else
+								*px = plt_texture_get_pixel(texture, tex_coord);
+								#endif
+							}
 						}
-						px++;
+						++px;
+						++dx;
 						bc_x = simd_int4_add(bc_x, bc_increment_x);
 					}
 					py += viewport_size.width;
+					dy += viewport_size.width;
 					bc_y = simd_int4_add(bc_y, bc_increment_y);
 				}
 			}

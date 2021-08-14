@@ -67,10 +67,7 @@ Plt_Texture *plt_texture_load(const char *path) {
 }
 
 inline Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
-	pos.x = plt_clamp(pos.x, 0, texture->size.width - 1);
-	pos.y = plt_clamp(pos.y, 0, texture->size.height - 1);
-
-	return texture->data[pos.y * texture->size.width + pos.x];
+	return texture->data[(pos.y % texture->size.height) * texture->size.width + (pos.x % texture->size.width)];
 }
 
 inline void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value) {

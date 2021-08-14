@@ -2,7 +2,7 @@
 #include "plt_platform.h"
 
 #ifdef __aarch64__
-#define NEON 0
+#define NEON 1
 #include <arm_neon.h>
 #else
 #define SSE 1

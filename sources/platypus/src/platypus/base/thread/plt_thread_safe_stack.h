@@ -2,11 +2,10 @@
 
 #include "plt_thread.h"
 #include <stdlib.h>
-#include <stdatomic.h>
 
 typedef struct Plt_Thread_Safe_Stack {
 	unsigned int *values;
-	atomic_int count;
+	unsigned int count;
 	unsigned int capacity;
 
 	Plt_Thread_Mutex *mutex;
@@ -37,11 +36,13 @@ static inline void plt_thread_safe_stack_unlock(Plt_Thread_Safe_Stack *stack) {
 }
 
 static inline void plt_thread_safe_stack_push(Plt_Thread_Safe_Stack *stack, unsigned int v) {
-	stack->values[atomic_fetch_add_explicit(&stack->count, 1, memory_order_relaxed)] = v;
+	stack->values[stack->count++] = v;
 }
 
 static inline bool plt_thread_safe_stack_pop(Plt_Thread_Safe_Stack *stack, unsigned int *v) {
-	int i = atomic_fetch_sub_explicit(&stack->count, 1, memory_order_relaxed);
+	plt_thread_safe_stack_lock(stack);
+	int i = stack->count--;
+	plt_thread_safe_stack_unlock(stack);
 	if (i < 1) {
 		return false;
 	} else {

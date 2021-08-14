@@ -310,7 +310,7 @@ int main(int argc, char **argv) {
 	camera_type_data->near_z = 0.1f;
 	camera_type_data->far_z = 100.0f;
 	
-	int count = 1;
+	int count = 4;
 	for (int x = -count; x < count; ++x) {
 		for (int z = -count; z < count; ++z) {
 			Plt_Object *enemy_object = plt_object_create(world, NULL, Plt_Object_Type_Enemy, "enemy");

@@ -152,6 +152,7 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	}
 
 	// Input
+	float *clipspace_z = vertex_data.clipspace_z;
 	float *clipspace_w = vertex_data.clipspace_w;
 	int *screen_positions_x = vertex_data.screen_positions_x;
 	int *screen_positions_y = vertex_data.screen_positions_y;
@@ -166,6 +167,11 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	simd_int4 *bc_initial = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
 	simd_int4 *bc_increment_x = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
 	simd_int4 *bc_increment_y = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
+	
+	// Depth
+	float *depth0 = plt_linear_allocator_alloc(allocator, sizeof(float) * triangle_count);
+	float *depth1 = plt_linear_allocator_alloc(allocator, sizeof(float) * triangle_count);
+	float *depth2 = plt_linear_allocator_alloc(allocator, sizeof(float) * triangle_count);
 	
 	// Texture coordinates (in pixels)
 	Plt_Vector2f *uv0 = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector2f) * triangle_count);
@@ -253,11 +259,14 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		bc_increment_y[o] = bc_increment_y_result;
 		
 		// Texture coordinate calculations
-		{
-			uv0[o] = plt_vector2f_make(uv_x[v], uv_y[v]);
-			uv1[o] = plt_vector2f_make(uv_x[v + 1], uv_y[v + 1]);
-			uv2[o] = plt_vector2f_make(uv_x[v + 1], uv_y[v + 2]);
-		}
+		uv0[o] = plt_vector2f_make(uv_x[v], uv_y[v]);
+		uv1[o] = plt_vector2f_make(uv_x[v + 1], uv_y[v + 1]);
+		uv2[o] = plt_vector2f_make(uv_x[v + 2], uv_y[v + 2]);
+		
+		// Depth
+		depth0[o] = clipspace_z[v];
+		depth1[o] = clipspace_z[v + 1];
+		depth2[o] = clipspace_z[v + 2];
 		
 		++output_triangle_count;
 	}
@@ -266,6 +275,9 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	data_buffer->bc_initial = bc_initial;
 	data_buffer->bc_increment_x = bc_increment_x;
 	data_buffer->bc_increment_y = bc_increment_y;
+	data_buffer->depth0 = depth0;
+	data_buffer->depth1 = depth1;
+	data_buffer->depth2 = depth2;
 	data_buffer->uv0 = uv0;
 	data_buffer->uv1 = uv1;
 	data_buffer->uv2 = uv2;
