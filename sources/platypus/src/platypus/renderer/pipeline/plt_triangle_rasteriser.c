@@ -93,14 +93,25 @@ void plt_triangle_rasteriser_update_depth_buffer(Plt_Triangle_Rasteriser *raster
 	rasteriser->depth_buffer = depth_buffer;
 }
 
-#define RENDER_PIXEL \
-if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0) && ((bc_x.x | bc_x.y | bc_x.z) != 0)) { \
-	float sum = bc_x.x + bc_x.y + bc_x.z; \
-	simd_float4 weights = simd_float4_create(bc_x.x / sum, bc_x.y / sum, bc_x.z / sum, 0.0f); \
-	*px = plt_color8_make(weights.x * 255, weights.y * 255, weights.z * 255, 255); \
+#define CLEAR_PIXEL(offset) \
+*(py + offset) = clear_color; \
+*(dy + offset) = 0.0f;
+
+#define PAINT_PIXEL(offset) \
+if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) { \
+	simd_float4 weights = simd_float4_create(bc_x.x / triangle_area, bc_x.y / triangle_area, bc_x.z / triangle_area, 0.0f); \
+	\
+	float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z; \
+	if (depth > *(dy + offset)) { \
+		*(dy + offset) = depth; \
+		Plt_Vector2i tex_coord = { \
+			.x = (uv0.x * weights.x + uv1.x * weights.y + uv2.x * weights.z) * texture_size.width, \
+			.y = (uv0.y * weights.x + uv1.y * weights.y + uv2.y * weights.z) * texture_size.height \
+		}; \
+		*(py + offset) = plt_texture_get_pixel(texture, tex_coord); \
+	} \
 } \
-px++; \
-bc_x = simd_int4_add(bc_x, bc_increment_x); \
+bc_x = simd_int4_add(bc_x, bc_increment_x);
 
 void *_raster_thread(unsigned int thread_id, void *thread_data) {
 	Plt_Triangle_Rasteriser *rasteriser = thread_data;
@@ -137,12 +148,17 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 			Plt_Color8 *py = pixel_initial;
 			float *dy = depth_initial;
 			for (unsigned int y = 0; y < PLT_TRIANGLE_BIN_SIZE; ++y) {
-				Plt_Color8 *px = py;
-				float *dx = dy;
-				for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
-					*(px++) = clear_color;
-					*(dx++) = 0.0f;
-				}
+				#if PLT_TRIANGLE_BIN_SIZE != 16
+				#error Unwrapped clear needs to be updated for new triangle size
+				#endif
+				CLEAR_PIXEL(0)  CLEAR_PIXEL(1)
+				CLEAR_PIXEL(2)  CLEAR_PIXEL(3)
+				CLEAR_PIXEL(4)  CLEAR_PIXEL(5)
+				CLEAR_PIXEL(6)  CLEAR_PIXEL(7)
+				CLEAR_PIXEL(8)  CLEAR_PIXEL(9)
+				CLEAR_PIXEL(10) CLEAR_PIXEL(11)
+				CLEAR_PIXEL(12) CLEAR_PIXEL(13)
+				CLEAR_PIXEL(14) CLEAR_PIXEL(15)
 				py += viewport_size.width;
 				dy += viewport_size.width;
 			}
@@ -176,31 +192,17 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 				float *dy = depth_initial;
 				for (unsigned int y = 0; y < PLT_TRIANGLE_BIN_SIZE; ++y) {
 					simd_int4 bc_x = bc_y;
-					Plt_Color8 *px = py;
-					float *dx = dy;
-					for (unsigned int x = 0; x < PLT_TRIANGLE_BIN_SIZE; ++x) {
-						if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) {
-							simd_float4 weights = simd_float4_create(bc_x.x / triangle_area, bc_x.y / triangle_area, bc_x.z / triangle_area, 0.0f);
-							
-							float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z;
-							if (depth > *dx) {
-								*dx = depth;
-								Plt_Vector2i tex_coord = {
-									.x = (uv0.x * weights.x + uv1.x * weights.y + uv2.x * weights.z) * texture_size.width,
-									.y = (uv0.y * weights.x + uv1.y * weights.y + uv2.y * weights.z) * texture_size.height
-								};
-								#if PLT_DEBUG_RASTER_THREAD_ID
-								*px = debug_color;
-								#else
-								*px = plt_texture_get_pixel(texture, tex_coord);
-//								*px = plt_color8_make(depth * 255, depth * 255, depth * 255, 255);
-								#endif
-							}
-						}
-						++px;
-						++dx;
-						bc_x = simd_int4_add(bc_x, bc_increment_x);
-					}
+					#if PLT_TRIANGLE_BIN_SIZE != 16
+					#error Unwrapped clear needs to be updated for new triangle size
+					#endif
+					PAINT_PIXEL(0)  PAINT_PIXEL(1)
+					PAINT_PIXEL(2)  PAINT_PIXEL(3)
+					PAINT_PIXEL(4)  PAINT_PIXEL(5)
+					PAINT_PIXEL(6)  PAINT_PIXEL(7)
+					PAINT_PIXEL(8)  PAINT_PIXEL(9)
+					PAINT_PIXEL(10) PAINT_PIXEL(11)
+					PAINT_PIXEL(12) PAINT_PIXEL(13)
+					PAINT_PIXEL(14) PAINT_PIXEL(15)
 					py += viewport_size.width;
 					dy += viewport_size.width;
 					bc_y = simd_int4_add(bc_y, bc_increment_y);
