@@ -6,7 +6,19 @@
 #define PLT_TRIANGLE_BIN_MAX_TRIANGLES 1024
 
 // Framebuffer pixel data = 16 x 16 x 4 = 1024 bytes
+// Changing this will require updating various unwrapped loops (the compiler will complain for all these locations)
 #define PLT_TRIANGLE_BIN_SIZE 16
+
+typedef enum Plt_Triangle_Tile_Coverage {
+	// Triangle is not visibile the tile
+	Plt_Triangle_Tile_Coverage_None,
+
+	// Triangle is visibile the tile but some areas are partially covered
+	Plt_Triangle_Tile_Coverage_Partial,
+
+	// Triangle covers the entire tile
+	Plt_Triangle_Tile_Coverage_Full
+} Plt_Triangle_Tile_Coverage;
 
 typedef struct Plt_Triangle_Bin_Data_Buffer {
 	unsigned int triangle_count;
@@ -35,6 +47,7 @@ typedef struct Plt_Triangle_Bin_Data_Buffer {
 
 typedef struct Plt_Triangle_Bin_Entry {
 	unsigned int index;
+	Plt_Triangle_Tile_Coverage coverage;
 	Plt_Triangle_Bin_Data_Buffer *buffer;
 	Plt_Texture *texture;
 } Plt_Triangle_Bin_Entry;

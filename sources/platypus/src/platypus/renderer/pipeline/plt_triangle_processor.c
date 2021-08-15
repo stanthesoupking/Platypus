@@ -7,72 +7,20 @@
 #include "plt_triangle_rasteriser.h"
 #include "plt_triangle_bin.h"
 
-typedef struct Plt_Triangle_Processor_Working_Buffer {
-	unsigned int triangle_capacity;
-
-	unsigned int *vertex_data_offset;
-	
-	int *bounds_min_x;
-	int *bounds_min_y;
-	int *bounds_max_x;
-	int *bounds_max_y;
-
-	simd_int4 *c_initial;
-	simd_int4 *c_increment_x;
-	simd_int4 *c_increment_y;
-} Plt_Triangle_Processor_Working_Buffer;
-
 typedef struct Plt_Triangle_Processor {
-	Plt_Triangle_Processor_Working_Buffer working_buffer;
+	bool idk;
 } Plt_Triangle_Processor;
 
 void plt_triangle_processor_free_working_buffer(Plt_Triangle_Processor *processor);
 
 Plt_Triangle_Processor *plt_triangle_processor_create() {
 	Plt_Triangle_Processor *processor = malloc(sizeof(Plt_Triangle_Processor));
-
-	processor->working_buffer = (Plt_Triangle_Processor_Working_Buffer){
-		.triangle_capacity = 0,
-		.vertex_data_offset = NULL,
-		.bounds_min_x = NULL,
-		.bounds_min_y = NULL,
-		.bounds_max_x = NULL,
-		.bounds_max_y = NULL,
-		.c_initial = NULL,
-		.c_increment_x = NULL,
-		.c_increment_y = NULL
-	};
-
 	return processor;
 }
 
 void plt_triangle_processor_destroy(Plt_Triangle_Processor **processor) {
-	plt_triangle_processor_free_working_buffer(*processor);
 	free(*processor);
 	*processor = NULL;
-}
-
-void plt_triangle_processor_free_working_buffer(Plt_Triangle_Processor *processor) {
-	if (processor->working_buffer.triangle_capacity == 0) {
-		// Nothing to free.
-		return;
-	}
-	free(processor->working_buffer.vertex_data_offset);
-	free(processor->working_buffer.bounds_max_x);
-	free(processor->working_buffer.bounds_max_y);
-	free(processor->working_buffer.bounds_min_x);
-	free(processor->working_buffer.bounds_min_y);
-	free(processor->working_buffer.c_initial);
-	free(processor->working_buffer.c_increment_x);
-	free(processor->working_buffer.c_increment_y);
-	processor->working_buffer.vertex_data_offset = NULL;
-	processor->working_buffer.bounds_max_x = NULL;
-	processor->working_buffer.bounds_max_y = NULL;
-	processor->working_buffer.bounds_min_x = NULL;
-	processor->working_buffer.bounds_min_y = NULL;
-	processor->working_buffer.c_initial = NULL;
-	processor->working_buffer.c_increment_x = NULL;
-	processor->working_buffer.c_increment_y = NULL;
 }
 
 simd_int4 plt_triangle_processor_orient2d(simd_int4 a_x, simd_int4 a_y, simd_int4 b_x, simd_int4 b_y, simd_int4 c_x, simd_int4 c_y) {
@@ -86,45 +34,6 @@ void plt_triangle_processor_get_c_increment(simd_int4 a_x, simd_int4 a_y, simd_i
 
 	*c_increment_x = simd_int4_subtract(plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, one_v, zero_v), zero);
 	*c_increment_y = simd_int4_subtract(plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, zero_v, one_v), zero);
-}
-
-void plt_triangle_processor_resize_working_buffer(Plt_Triangle_Processor *processor, unsigned int capacity) {
-	if (processor->working_buffer.triangle_capacity == capacity) {
-		return;
-	}
-
-	if (processor->working_buffer.triangle_capacity > 0) {
-		free(processor->working_buffer.vertex_data_offset);
-		free(processor->working_buffer.bounds_max_x);
-		free(processor->working_buffer.bounds_max_y);
-		free(processor->working_buffer.bounds_min_x);
-		free(processor->working_buffer.bounds_min_y);
-		free(processor->working_buffer.c_initial);
-		free(processor->working_buffer.c_increment_x);
-		free(processor->working_buffer.c_increment_y);
-	}
-
-	if (capacity > 0) {
-		processor->working_buffer.vertex_data_offset = malloc(sizeof(unsigned int) * capacity);
-		processor->working_buffer.bounds_max_x = malloc(sizeof(int) * capacity);
-		processor->working_buffer.bounds_max_y = malloc(sizeof(int) * capacity);
-		processor->working_buffer.bounds_min_x = malloc(sizeof(int) * capacity);
-		processor->working_buffer.bounds_min_y = malloc(sizeof(int) * capacity);
-		processor->working_buffer.c_initial = malloc(sizeof(simd_int4) * capacity);
-		processor->working_buffer.c_increment_x = malloc(sizeof(simd_int4) * capacity);
-		processor->working_buffer.c_increment_y = malloc(sizeof(simd_int4) * capacity);
-	} else {
-		processor->working_buffer.vertex_data_offset = NULL;
-		processor->working_buffer.bounds_max_x = NULL;
-		processor->working_buffer.bounds_max_y = NULL;
-		processor->working_buffer.bounds_min_x = NULL;
-		processor->working_buffer.bounds_min_y = NULL;
-		processor->working_buffer.c_initial = NULL;
-		processor->working_buffer.c_increment_x = NULL;
-		processor->working_buffer.c_increment_y = NULL;
-	}
-
-	processor->working_buffer.triangle_capacity = capacity;
 }
 
 Plt_Vector2f plt_triangle_processor_get_texture_coordinate(simd_int4 bc, Plt_Size texture_size, float *uv_x, float *uv_y) {
@@ -142,14 +51,16 @@ Plt_Vector2f plt_triangle_processor_get_texture_coordinate(simd_int4 bc, Plt_Siz
 	return result;
 }
 
+// Is the given point (pixel in screenspace) inside the given triangle
+bool plt_triangle_processor_is_point_in_triangle(Plt_Vector2i point, simd_int4 bc_initial, simd_int4 bc_increment_x, simd_int4 bc_increment_y) {
+	simd_int4 bc = simd_int4_add(simd_int4_add(bc_initial, simd_int4_multiply(bc_increment_y, simd_int4_create_scalar(point.y))), simd_int4_multiply(bc_increment_x, simd_int4_create_scalar(point.x)));
+	return (bc.x <= 0) && (bc.y <= 0) && (bc.z <= 0);
+}
+
 void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processor, Plt_Linear_Allocator *allocator, Plt_Vector2i viewport, Plt_Texture *texture, Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Rasteriser *rasteriser) {
 	unsigned int triangle_count = vertex_data.vertex_count / 3;
 	Plt_Size texture_size = plt_texture_get_size(texture);
 	Plt_Vector2f texel_size = plt_texture_get_texel_size(texture);
-	
-	if (processor->working_buffer.triangle_capacity < triangle_count) {
-		plt_triangle_processor_resize_working_buffer(processor, triangle_count);
-	}
 
 	// Input
 	float *clipspace_z = vertex_data.clipspace_z;
@@ -161,7 +72,6 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 
 	// Output
 	Plt_Triangle_Bin_Data_Buffer *data_buffer = plt_linear_allocator_alloc(allocator, sizeof(Plt_Triangle_Bin_Data_Buffer));
-	unsigned int *vertex_data_offset = processor->working_buffer.vertex_data_offset;
 	
 	// Barycentric coordinates
 	simd_int4 *bc_initial = plt_linear_allocator_alloc(allocator, sizeof(simd_int4) * triangle_count);
@@ -229,27 +139,6 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		if (backward_facing) {
 			continue;
 		}
-						
-		// Add to triangle bins
-		Plt_Triangle_Bin_Entry bin_entry = {
-			.index = o,
-			.buffer = data_buffer,
-			.texture = texture
-		};
-		
-		Plt_Vector2i tile_bounds_min = plt_vector2i_make(bounds_min.x / PLT_TRIANGLE_BIN_SIZE, bounds_min.y / PLT_TRIANGLE_BIN_SIZE);
-		Plt_Vector2i tile_bounds_max = plt_vector2i_make(bounds_max.x / PLT_TRIANGLE_BIN_SIZE, bounds_max.y / PLT_TRIANGLE_BIN_SIZE);
-		Plt_Size tile_dimensions = plt_rasteriser_get_triangle_bin_dimensions(rasteriser);
-		tile_bounds_max.x = plt_clamp(tile_bounds_max.x, 0, tile_dimensions.width);
-		tile_bounds_max.y = plt_clamp(tile_bounds_max.y, 0, tile_dimensions.height);
-		for (int y = tile_bounds_min.y; y <= tile_bounds_max.y; ++y) {
-			for (int x = tile_bounds_min.x; x <= tile_bounds_max.x; ++x) {
-				Plt_Triangle_Bin *bin = plt_rasteriser_get_triangle_bin(rasteriser, plt_vector2i_make(x, y));
-				if (bin->triangle_count < PLT_TRIANGLE_BIN_MAX_TRIANGLES) {
-					bin->entries[bin->triangle_count++] = bin_entry;
-				}
-			}
-		}
 		
 		// Barycentric calculations
 		bc_initial[o] = plt_triangle_processor_orient2d(a_x, a_y, b_x, b_y, simd_int4_create_scalar(0), simd_int4_create_scalar(0));
@@ -274,6 +163,41 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		depth0[o] = 1.0f / clipspace_z[v];
 		depth1[o] = 1.0f / clipspace_z[v + 1];
 		depth2[o] = 1.0f / clipspace_z[v + 2];
+		
+		Plt_Vector2i tile_bounds_min = plt_vector2i_make(bounds_min.x / PLT_TRIANGLE_BIN_SIZE, bounds_min.y / PLT_TRIANGLE_BIN_SIZE);
+		Plt_Vector2i tile_bounds_max = plt_vector2i_make(bounds_max.x / PLT_TRIANGLE_BIN_SIZE, bounds_max.y / PLT_TRIANGLE_BIN_SIZE);
+		Plt_Size tile_dimensions = plt_rasteriser_get_triangle_bin_dimensions(rasteriser);
+		tile_bounds_max.x = plt_clamp(tile_bounds_max.x, 0, tile_dimensions.width - 1);
+		tile_bounds_max.y = plt_clamp(tile_bounds_max.y, 0, tile_dimensions.height - 1);
+		for (int y = tile_bounds_min.y; y <= tile_bounds_max.y; ++y) {
+			for (int x = tile_bounds_min.x; x <= tile_bounds_max.x; ++x) {
+				Plt_Triangle_Bin_Entry bin_entry = {
+					.index = o,
+					.buffer = data_buffer,
+					.texture = texture
+				};
+								
+				Plt_Vector2i top_left = plt_vector2i_make(x * PLT_TRIANGLE_BIN_SIZE, y * PLT_TRIANGLE_BIN_SIZE);
+				
+				// Get triangle coverage in tile
+				bool corner[4];
+				corner[0] = plt_triangle_processor_is_point_in_triangle(top_left, bc_initial[o], bc_increment_x[o], bc_increment_y[o]);
+				corner[1] = plt_triangle_processor_is_point_in_triangle(plt_vector2i_add(top_left, plt_vector2i_make(0, PLT_TRIANGLE_BIN_SIZE - 1)), bc_initial[o], bc_increment_x[o], bc_increment_y[o]);
+				corner[2] = plt_triangle_processor_is_point_in_triangle(plt_vector2i_add(top_left, plt_vector2i_make(PLT_TRIANGLE_BIN_SIZE - 1, PLT_TRIANGLE_BIN_SIZE - 1)), bc_initial[o], bc_increment_x[o], bc_increment_y[o]);
+				corner[3] = plt_triangle_processor_is_point_in_triangle(plt_vector2i_add(top_left, plt_vector2i_make(PLT_TRIANGLE_BIN_SIZE - 1, 0)), bc_initial[o], bc_increment_x[o], bc_increment_y[o]);
+				
+				if (corner[0] & corner[1] & corner[2] & corner[3]) {
+					bin_entry.coverage = Plt_Triangle_Tile_Coverage_Full;
+				} else {
+					bin_entry.coverage = Plt_Triangle_Tile_Coverage_Partial;
+				}
+								
+				Plt_Triangle_Bin *bin = plt_rasteriser_get_triangle_bin(rasteriser, plt_vector2i_make(x, y));
+				if (bin->triangle_count < PLT_TRIANGLE_BIN_MAX_TRIANGLES) {
+					bin->entries[bin->triangle_count++] = bin_entry;
+				}
+			}
+		}
 		
 		++output_triangle_count;
 	}

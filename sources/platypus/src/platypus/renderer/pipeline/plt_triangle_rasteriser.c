@@ -98,7 +98,7 @@ void plt_triangle_rasteriser_update_depth_buffer(Plt_Triangle_Rasteriser *raster
 *(dy + offset) = 0.0f;
 
 #define PAINT_PIXEL(offset) \
-if ((bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) { \
+if (full_coverage || (bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) { \
 	simd_float4 weights = simd_float4_create(bc_x.x / triangle_area, bc_x.y / triangle_area, bc_x.z / triangle_area, 0.0f); \
 	\
 	float depth = depth0 * weights.x + depth1 * weights.y + depth2 * weights.z; \
@@ -169,6 +169,12 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 			for (unsigned int i = 0; i < bin.triangle_count; ++i) {
 				Plt_Triangle_Bin_Entry entry = bin.entries[i];
 				Plt_Triangle_Bin_Data_Buffer *data_buffer = entry.buffer;
+				
+				bool full_coverage = entry.coverage == Plt_Triangle_Tile_Coverage_Full;
+				debug_color = full_coverage ? plt_color8_make(0, 255, 0, 255) : plt_color8_make(0, 0, 255, 255);
+				if (entry.coverage == Plt_Triangle_Tile_Coverage_None) {
+					debug_color = plt_color8_make(255, 0, 0, 255);
+				}
 				
 				Plt_Texture *texture = entry.texture;
 				Plt_Size texture_size = plt_texture_get_size(texture);
