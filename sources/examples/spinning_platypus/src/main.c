@@ -119,12 +119,6 @@ int main(int argc, char **argv) {
 	camera_type_data->near_z = 0.1f;
 	camera_type_data->far_z = 100.0f;
 
-	// Setup lighting
-	// This will be refactored into being part of the world eventually
-	plt_renderer_set_ambient_lighting(renderer, (Plt_Vector3f){ 0.4f, 0.3f, 0.3f });
-	plt_renderer_set_directional_lighting(renderer, (Plt_Vector3f){ 1.0f, 0.78f, 0.78f });
-	plt_renderer_set_directional_lighting_direction(renderer, (Plt_Vector3f){-0.3f,-1.0f,0.1f});
-
 	// Application run loop
 	while (!plt_application_should_close(app)) {
 		plt_application_update(app);

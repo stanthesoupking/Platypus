@@ -1,6 +1,7 @@
 #include "plt_font.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 const int PLT_FONT_CHARACTERS_PER_ROW = 16;
 const int PLT_FONT_CHARACTERS_PER_COLUMN = 16;

@@ -21,6 +21,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	Plt_Renderer *renderer = malloc(sizeof(Plt_Renderer));
 	
 	renderer->application = application;
+	renderer->frame_allocator = plt_linear_allocator_create(1024 * 1024 * 128); // 64MB
 
 	renderer->vertex_processor = plt_vertex_processor_create();
 	renderer->triangle_processor = plt_triangle_processor_create();
@@ -35,10 +36,13 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
 	renderer->lighting_model = Plt_Lighting_Model_Unlit;
 	renderer->render_color = plt_color8_make(255,255,255,255);
-
-	renderer->ambient_lighting = (Plt_Vector3f){ 0.16f, 0.16f, 0.16f };
-	renderer->directional_lighting = (Plt_Vector3f){ 1.0f, 1.0f, 1.0f };
-	renderer->directional_lighting_direction = (Plt_Vector3f){ 0.0f, -1.0f, 0.0f };
+	
+	renderer->lighting_setup = (Plt_Lighting_Setup) {
+		.ambient_lighting = plt_vector3f_make(0.16f, 0.16f, 0.16f),
+		.directional_light_count = 1,
+		.directional_light_directions = plt_vector3f_make(0.0f, -1.0f, 0.0f),
+		.directional_light_amounts = plt_vector3f_make(1.0f, 1.0f, 1.0f)
+	};
 	
 	renderer->bound_texture = NULL;
 	
@@ -52,6 +56,7 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 }
 
 void plt_renderer_destroy(Plt_Renderer **renderer) {
+	plt_linear_allocator_destroy(&(*renderer)->frame_allocator);
 	plt_vertex_processor_destroy(&(*renderer)->vertex_processor);
 	plt_triangle_processor_destroy(&(*renderer)->triangle_processor);
 
@@ -79,29 +84,39 @@ void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer fra
 	}
 }
 
+void plt_renderer_rasterise_triangles(Plt_Renderer *renderer) {
+	// Rasterise triangles
+	plt_timer_start(tr_timer)
+	plt_triangle_rasteriser_render_triangles(renderer->triangle_rasteriser);
+	plt_linear_allocator_clear(renderer->frame_allocator);
+	plt_timer_end(tr_timer, "TRIANGLE_RASTERISER")
+}
+
 void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	Plt_Framebuffer framebuffer = renderer->framebuffer;
 	
-#ifdef PLT_PLATFORM_MACOS
-	memset_pattern4(framebuffer.pixels, &clear_color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);
-#else
-	int total_pixels = framebuffer.width * framebuffer.height;
-	for(int i = 0; i < total_pixels; ++i) {
-		framebuffer.pixels[i] = clear_color;
-	}
-#endif
+	// Clear triangle bins
+	plt_rasteriser_clear_triangle_bins(renderer->triangle_rasteriser);
 	
-	if (renderer->depth_buffer) {
-		float clear_depth = INFINITY;
-#ifdef PLT_PLATFORM_MACOS
-		memset_pattern4(renderer->depth_buffer, &clear_depth, sizeof(float) * renderer->depth_buffer_width * renderer->depth_buffer_height);
-#else
-		int total_depth_pixels = framebuffer.width * framebuffer.height;
-		for (int i = 0; i < total_depth_pixels; ++i) {
-			renderer->depth_buffer[i] = INFINITY;
-		}
-#endif
-	}
+//#ifdef PLT_PLATFORM_MACOS
+//	memset_pattern4(framebuffer.pixels, &clear_color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);
+//#else
+//	int total_pixels = framebuffer.width * framebuffer.height;
+//	for(int i = 0; i < total_pixels; ++i) {
+//		framebuffer.pixels[i] = clear_color;
+//	}
+//#endif
+//
+//	if (renderer->depth_buffer) {
+//		float clear_depth = INFINITY;
+//#ifdef PLT_PLATFORM_MACOS
+//		memset_pattern4(renderer->depth_buffer, &clear_depth, sizeof(float) * renderer->depth_buffer_width * renderer->depth_buffer_height);
+//#else
+//		int total_depth_pixels = framebuffer.width * framebuffer.height;
+//		for (int i = 0; i < total_depth_pixels; ++i) {
+//			renderer->depth_buffer[i] = INFINITY;
+//		}
+//#endif
 }
 
 void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
@@ -192,7 +207,7 @@ void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	
 	// Process vertices
 	plt_timer_start(vp_timer)
-	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
+	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
 	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
 
 	Plt_Color8 color = renderer->render_color;
@@ -233,18 +248,14 @@ void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
 	
 	// Process vertices
 	plt_timer_start(vp_timer)
-	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
+	
+	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
 	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
 
 	// Process triangles
 	plt_timer_start(tp_timer)
-	Plt_Triangle_Processor_Result tp_result = plt_triangle_processor_process_vertex_data(renderer->triangle_processor, viewport, vp_result);
+	plt_triangle_processor_process_vertex_data(renderer->triangle_processor, renderer->frame_allocator, viewport, renderer->bound_texture, vp_result, renderer->triangle_rasteriser);
 	plt_timer_end(tp_timer, "TRIANGLE_PROCESSOR")
-
-	// Rasterise triangles
-	plt_timer_start(tr_timer)
-	plt_triangle_rasteriser_render_triangles(renderer->triangle_rasteriser, tp_result, vp_result);
-	plt_timer_end(tr_timer, "TRIANGLE_RASTERISER")
 	
 	plt_timer_end(draw_mesh_timer, "DRAW_MESH");
 }
@@ -500,26 +511,20 @@ void plt_renderer_set_render_color(Plt_Renderer *renderer, Plt_Color8 color) {
 	renderer->render_color = color;
 }
 
+void plt_renderer_set_lighting_setup(Plt_Renderer* renderer, Plt_Lighting_Setup setup) {
+	// Normalise all directional lights
+	for (unsigned int i = 0; i < setup.directional_light_count; ++i) {
+		setup.directional_light_directions[i] = plt_vector3f_normalize(setup.directional_light_directions[i]);
+	}
+	renderer->lighting_setup = setup;
+}
+
 void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture) {
 	renderer->bound_texture = texture;
 }
 
-void plt_renderer_set_ambient_lighting(Plt_Renderer *renderer, Plt_Vector3f value) {
-	renderer->ambient_lighting = value;
-}
-
-void plt_renderer_set_directional_lighting(Plt_Renderer *renderer, Plt_Vector3f value) {
-	renderer->directional_lighting = value;
-}
-
-void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt_Vector3f direction) {
-	renderer->directional_lighting_direction = direction;
-}
-
 void plt_renderer_update_mvp(Plt_Renderer *renderer) {
-	// renderer->mvp_matrix = plt_matrix_multiply(plt_matrix_multiply(renderer->projection_matrix, renderer->view_matrix), renderer->model_matrix);
 	Plt_Matrix4x4f mv = plt_matrix_multiply(renderer->view_matrix, renderer->model_matrix);
-
 	renderer->mvp_matrix = plt_matrix_multiply(renderer->projection_matrix, mv);
 }
 

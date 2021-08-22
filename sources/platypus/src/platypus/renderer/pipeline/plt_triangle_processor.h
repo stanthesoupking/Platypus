@@ -23,4 +23,6 @@ typedef struct Plt_Triangle_Processor_Result {
 Plt_Triangle_Processor *plt_triangle_processor_create();
 void plt_triangle_processor_destroy(Plt_Triangle_Processor **processor);
 
-Plt_Triangle_Processor_Result plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processor, Plt_Vector2i viewport, Plt_Vertex_Processor_Result vertex_data);
+typedef struct Plt_Triangle_Rasteriser Plt_Triangle_Rasteriser;
+typedef struct Plt_Linear_Allocator Plt_Linear_Allocator;
+void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processor, Plt_Linear_Allocator *allocator, Plt_Vector2i viewport, Plt_Texture *texture, Plt_Vertex_Processor_Result vertex_data, Plt_Triangle_Rasteriser *rasteriser);

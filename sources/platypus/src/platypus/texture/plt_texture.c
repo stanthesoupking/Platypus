@@ -11,6 +11,7 @@ typedef struct Plt_Texture {
 	Plt_Color8 *data;
 
 	Plt_Size size;
+	Plt_Vector2f texel_size;
 
 	unsigned int row_length;
 } Plt_Texture;
@@ -19,6 +20,7 @@ Plt_Texture *plt_texture_create(Plt_Size size) {
 	Plt_Texture *texture = malloc(sizeof(Plt_Texture));
 
 	texture->size = size;
+	texture->texel_size = plt_vector2f_make(1.0f / (float)size.width, 1.0f / (float)size.height);
 
 	texture->row_length = size.width * sizeof(Plt_Color8);
 	texture->data = malloc(texture->row_length * size.height);
@@ -36,6 +38,7 @@ Plt_Texture *plt_texture_create_with_bytes_nocopy(Plt_Size size, void *bytes) {
 	Plt_Texture *texture = malloc(sizeof(Plt_Texture));
 
 	texture->size = size;
+	texture->texel_size = plt_vector2f_make(1.0f / (float)size.width, 1.0f / (float)size.height);
 
 	texture->row_length = size.width * sizeof(Plt_Color8);
 	texture->data = bytes;
@@ -64,10 +67,7 @@ Plt_Texture *plt_texture_load(const char *path) {
 }
 
 inline Plt_Color8 plt_texture_get_pixel(Plt_Texture *texture, Plt_Vector2i pos) {
-	pos.x = plt_clamp(pos.x, 0, texture->size.width);
-	pos.y = plt_clamp(pos.y, 0, texture->size.height);
-
-	return texture->data[pos.y * texture->size.width + pos.x];
+	return texture->data[(pos.y % texture->size.height) * texture->size.width + (pos.x % texture->size.width)];
 }
 
 inline void plt_texture_set_pixel(Plt_Texture *texture, Plt_Vector2i pos, Plt_Color8 value) {
@@ -97,4 +97,12 @@ void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value) {
 
 Plt_Size plt_texture_get_size(Plt_Texture *texture) {
 	return texture->size;
+}
+
+Plt_Vector2f plt_texture_get_texel_size(Plt_Texture *texture) {
+	return texture->texel_size;
+}
+
+Plt_Color8 *plt_texture_get_pixels(Plt_Texture *texture) {
+	return texture->data;
 }

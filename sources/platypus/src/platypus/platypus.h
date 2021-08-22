@@ -89,6 +89,7 @@ Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale);
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v);
 
 Plt_Size plt_size_make(unsigned int width, unsigned int height);
+Plt_Rect plt_rect_make(unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
 Plt_Vector2i plt_vector2i_make(int x, int y);
 
@@ -103,20 +104,25 @@ Plt_Vector3f plt_vector3f_cross(Plt_Vector3f a, Plt_Vector3f b);
 
 Plt_Vector3f plt_vector3f_normalize(Plt_Vector3f v);
 
+Plt_Vector2i plt_vector2i_add(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector2f plt_vector2f_add(Plt_Vector2f a, Plt_Vector2f b);
 Plt_Vector3f plt_vector3f_add(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_add(Plt_Vector4f a, Plt_Vector4f b);
 
+Plt_Vector2i plt_vector2i_subtract(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector3f plt_vector3f_subtract(Plt_Vector3f a, Plt_Vector3f b);
 
+Plt_Vector2i plt_vector2i_multiply(Plt_Vector2i a, Plt_Vector2i b);
 Plt_Vector2f plt_vector2f_multiply(Plt_Vector2f a, Plt_Vector2f b);
 Plt_Vector3f plt_vector3f_multiply(Plt_Vector3f a, Plt_Vector3f b);
 Plt_Vector4f plt_vector4f_multiply(Plt_Vector4f a, Plt_Vector4f b);
 
+Plt_Vector2i plt_vector2i_multiply_scalar(Plt_Vector2i a, int b);
 Plt_Vector2f plt_vector2f_multiply_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_multiply_scalar(Plt_Vector3f a, float b);
 Plt_Vector4f plt_vector4f_multiply_scalar(Plt_Vector4f a, float b);
 
+Plt_Vector2i plt_vector2i_divide_scalar(Plt_Vector2i a, int b);
 Plt_Vector2f plt_vector2f_divide_scalar(Plt_Vector2f a, float b);
 Plt_Vector3f plt_vector3f_divide_scalar(Plt_Vector3f a, float b);
 
@@ -278,6 +284,15 @@ typedef enum Plt_Lighting_Model {
 	Plt_Lighting_Model_Vertex_Lit = 1,
 } Plt_Lighting_Model;
 
+#define PLT_LIGHTING_SETUP_MAX_DIRECTIONAL_LIGHTS 32
+typedef struct Plt_Lighting_Setup {
+	Plt_Vector3f directional_light_directions[PLT_LIGHTING_SETUP_MAX_DIRECTIONAL_LIGHTS];
+	Plt_Vector3f directional_light_amounts[PLT_LIGHTING_SETUP_MAX_DIRECTIONAL_LIGHTS];
+	unsigned int directional_light_count;
+
+	Plt_Vector3f ambient_lighting;
+} Plt_Lighting_Setup;
+
 typedef struct Plt_Renderer Plt_Renderer;
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;
@@ -299,11 +314,8 @@ void plt_renderer_set_primitive_type(Plt_Renderer *renderer, Plt_Primitive_Type 
 void plt_renderer_set_point_size(Plt_Renderer *renderer, unsigned int size);
 void plt_renderer_set_lighting_model(Plt_Renderer *renderer, Plt_Lighting_Model model);
 void plt_renderer_set_render_color(Plt_Renderer *renderer, Plt_Color8 color);
+void plt_renderer_set_lighting_setup(Plt_Renderer* renderer, Plt_Lighting_Setup setup);
 void plt_renderer_bind_texture(Plt_Renderer *renderer, Plt_Texture *texture);
-
-void plt_renderer_set_ambient_lighting(Plt_Renderer *renderer, Plt_Vector3f value);
-void plt_renderer_set_directional_lighting(Plt_Renderer *renderer, Plt_Vector3f value);
-void plt_renderer_set_directional_lighting_direction(Plt_Renderer *renderer, Plt_Vector3f direction);
 
 void plt_renderer_set_model_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
 void plt_renderer_set_view_matrix(Plt_Renderer *renderer, Plt_Matrix4x4f matrix);
@@ -426,6 +438,8 @@ Plt_Color8 plt_texture_sample(Plt_Texture *texture, Plt_Vector2f pos);
 void plt_texture_clear(Plt_Texture *texture, Plt_Color8 value);
 
 Plt_Size plt_texture_get_size(Plt_Texture *texture);
+Plt_Vector2f plt_texture_get_texel_size(Plt_Texture *texture);
+Plt_Color8 *plt_texture_get_pixels(Plt_Texture *texture);
 
 // MARK: Font
 
