@@ -117,7 +117,7 @@ void plt_vertex_processor_resize_working_buffer(Plt_Vertex_Processor *processor,
 	processor->working_buffer.vertex_capacity = capacity;
 }
 
-Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Processor *processor, Plt_Linear_Allocator *allocator, Plt_Mesh *mesh, Plt_Vector2i viewport, Plt_Matrix4x4f model, Plt_Matrix4x4f mvp) {
+Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Processor *processor, Plt_Linear_Allocator *allocator, Plt_Lighting_Setup lighting_setup, Plt_Mesh *mesh, Plt_Vector2i viewport, Plt_Matrix4x4f model, Plt_Matrix4x4f mvp) {
 	unsigned int vertex_count = mesh->vertex_count;
 
 	if (processor->working_buffer.vertex_capacity < vertex_count) {
@@ -144,6 +144,9 @@ Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Process
 	float *world_normals_x = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
 	float *world_normals_y = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
 	float *world_normals_z = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *lighting_r = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *lighting_g = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
+	float *lighting_b = plt_linear_allocator_alloc(allocator, sizeof(float) * vertex_count);
 
 	for (unsigned int i = 0; i < vertex_count; ++i) {
 		Plt_Vector4f input = { model_positions_x[i], model_positions_y[i], model_positions_z[i], 1.0f };
@@ -162,6 +165,18 @@ Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Process
 		world_normals_x[i] = normalized_world_normal.x;
 		world_normals_y[i] = normalized_world_normal.y;
 		world_normals_z[i] = normalized_world_normal.z;
+
+		// Apply lighting
+		lighting_r[i] = lighting_setup.ambient_lighting.x;
+		lighting_g[i] = lighting_setup.ambient_lighting.y;
+		lighting_b[i] = lighting_setup.ambient_lighting.z;
+		for (unsigned int j = 0; j < lighting_setup.directional_light_count; ++j) {
+			float light_amount = plt_max(plt_vector3f_dot_product(normalized_world_normal, lighting_setup.directional_light_directions[j]), 0);
+			Plt_Vector3f directional_lighting = plt_vector3f_multiply_scalar(lighting_setup.directional_light_amounts[j], light_amount);
+			lighting_r[i] += directional_lighting.x;
+			lighting_g[i] += directional_lighting.y;
+			lighting_b[i] += directional_lighting.z;
+		}
 	}
 
 	return (Plt_Vertex_Processor_Result) {
@@ -176,6 +191,9 @@ Plt_Vertex_Processor_Result plt_vertex_processor_process_mesh(Plt_Vertex_Process
 		.model_uvs_y = model_uvs_y,
 		.world_normals_x = world_normals_x,
 		.world_normals_y = world_normals_y,
-		.world_normals_z = world_normals_z
+		.world_normals_z = world_normals_z,
+		.lighting_r = lighting_r,
+		.lighting_g = lighting_g,
+		.lighting_b = lighting_b
 	};
 }

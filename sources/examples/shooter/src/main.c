@@ -335,9 +335,17 @@ int main(int argc, char **argv) {
 
 	// Setup lighting
 	// This will be refactored into being part of the world eventually
-	plt_renderer_set_ambient_lighting(renderer, (Plt_Vector3f){ 0.4f, 0.3f, 0.3f });
-	plt_renderer_set_directional_lighting(renderer, (Plt_Vector3f){ 1.0f, 0.78f, 0.78f });
-	plt_renderer_set_directional_lighting_direction(renderer, (Plt_Vector3f){-0.3f,-1.0f,0.1f});
+	Plt_Lighting_Setup lighting_setup = {
+		.ambient_lighting = { 0.4f, 0.3f, 0.3f },
+		.directional_light_count = 1,
+		.directional_light_directions = {
+			{ -0.3f, -1.0f, 0.1f }
+		},
+		.directional_light_amounts = {
+			{ 1.0f, 0.78f, 0.78f }
+		}
+	};
+	plt_renderer_set_lighting_setup(renderer, lighting_setup);
 
 	// Application run loop
 	while (!plt_application_should_close(app)) {

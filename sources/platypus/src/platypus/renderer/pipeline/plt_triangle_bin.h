@@ -40,9 +40,9 @@ typedef struct Plt_Triangle_Bin_Data_Buffer {
 	Plt_Vector2f *uv2;
 	
 	// Lighting
-	Plt_Vector3f *lighting_initial;
-	Plt_Vector3f *lighting_increment_x;
-	Plt_Vector3f *lighting_increment_y;
+	Plt_Vector3f *lighting0;
+	Plt_Vector3f *lighting1;
+	Plt_Vector3f *lighting2;
 } Plt_Triangle_Bin_Data_Buffer;
 
 typedef struct Plt_Triangle_Bin_Entry {

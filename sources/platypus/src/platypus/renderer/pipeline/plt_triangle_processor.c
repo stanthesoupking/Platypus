@@ -69,6 +69,9 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	int *screen_positions_y = vertex_data.screen_positions_y;
 	float *uv_x = vertex_data.model_uvs_x;
 	float *uv_y = vertex_data.model_uvs_y;
+	float *lighting_r = vertex_data.lighting_r;
+	float *lighting_g = vertex_data.lighting_g;
+	float *lighting_b = vertex_data.lighting_b;
 
 	// Output
 	Plt_Triangle_Bin_Data_Buffer *data_buffer = plt_linear_allocator_alloc(allocator, sizeof(Plt_Triangle_Bin_Data_Buffer));
@@ -90,9 +93,9 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 	Plt_Vector2f *uv2 = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector2f) * triangle_count);
 	
 	// Lighting
-	Plt_Vector3f *lighting_initial = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
-	Plt_Vector3f *lighting_increment_x = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
-	Plt_Vector3f *lighting_increment_y = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
+	Plt_Vector3f *lighting0 = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
+	Plt_Vector3f *lighting1 = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
+	Plt_Vector3f *lighting2 = plt_linear_allocator_alloc(allocator, sizeof(Plt_Vector3f) * triangle_count);
 
 	unsigned int output_triangle_count = 0;
 	for (unsigned int i = 0; i < triangle_count; ++i) {
@@ -163,6 +166,11 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		depth0[o] = 1.0f / clipspace_z[v];
 		depth1[o] = 1.0f / clipspace_z[v + 1];
 		depth2[o] = 1.0f / clipspace_z[v + 2];
+
+		// Lighting
+		lighting0[o] = plt_vector3f_make(lighting_r[v], lighting_g[v], lighting_b[v]);
+		lighting1[o] = plt_vector3f_make(lighting_r[v + 1], lighting_g[v + 1], lighting_b[v + 1]);
+		lighting2[o] = plt_vector3f_make(lighting_r[v + 2], lighting_g[v + 2], lighting_b[v + 2]);
 		
 		Plt_Vector2i tile_bounds_min = plt_vector2i_make(bounds_min.x / PLT_TRIANGLE_BIN_SIZE, bounds_min.y / PLT_TRIANGLE_BIN_SIZE);
 		Plt_Vector2i tile_bounds_max = plt_vector2i_make(bounds_max.x / PLT_TRIANGLE_BIN_SIZE, bounds_max.y / PLT_TRIANGLE_BIN_SIZE);
@@ -202,15 +210,20 @@ void plt_triangle_processor_process_vertex_data(Plt_Triangle_Processor *processo
 		++output_triangle_count;
 	}
 	
-	data_buffer->triangle_count = output_triangle_count;
-	data_buffer->bc_initial = bc_initial;
-	data_buffer->bc_increment_x = bc_increment_x;
-	data_buffer->bc_increment_y = bc_increment_y;
-	data_buffer->triangle_area = triangle_area;
-	data_buffer->depth0 = depth0;
-	data_buffer->depth1 = depth1;
-	data_buffer->depth2 = depth2;
-	data_buffer->uv0 = uv0;
-	data_buffer->uv1 = uv1;
-	data_buffer->uv2 = uv2;
+	*data_buffer = (Plt_Triangle_Bin_Data_Buffer){
+		.triangle_count = output_triangle_count,
+		.bc_initial = bc_initial,
+		.bc_increment_x = bc_increment_x,
+		.bc_increment_y = bc_increment_y,
+		.triangle_area = triangle_area,
+		.depth0 = depth0,
+		.depth1 = depth1,
+		.depth2 = depth2,
+		.uv0 = uv0,
+		.uv1 = uv1,
+		.uv2 = uv2,
+		.lighting0 = lighting0,
+		.lighting1 = lighting1,
+		.lighting2 = lighting2
+	};
 }

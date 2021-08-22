@@ -23,11 +23,8 @@ typedef struct Plt_Renderer {
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
 	Plt_Lighting_Model lighting_model;
-	Plt_Color8 render_color;
-
-	Plt_Vector3f ambient_lighting;
-	Plt_Vector3f directional_lighting;
-	Plt_Vector3f directional_lighting_direction;
+	Plt_Color8 render_color;	
+	Plt_Lighting_Setup lighting_setup;
 	
 	Plt_Texture *bound_texture;
 	

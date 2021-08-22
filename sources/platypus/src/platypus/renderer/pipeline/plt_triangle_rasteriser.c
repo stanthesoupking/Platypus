@@ -108,7 +108,11 @@ if (full_coverage || (bc_x.x <= 0) && (bc_x.y <= 0) && (bc_x.z <= 0)) { \
 			.x = (uv0.x * weights.x + uv1.x * weights.y + uv2.x * weights.z) * texture_size.width, \
 			.y = (uv0.y * weights.x + uv1.y * weights.y + uv2.y * weights.z) * texture_size.height \
 		}; \
-		*(py + offset) = plt_texture_get_pixel(texture, tex_coord); \
+		Plt_Vector3f lighting = plt_vector3f_make(0, 0, 0); \
+		lighting = plt_vector3f_add(lighting, plt_vector3f_multiply_scalar(lighting0, weights.x)); \
+		lighting = plt_vector3f_add(lighting, plt_vector3f_multiply_scalar(lighting1, weights.y)); \
+		lighting = plt_vector3f_add(lighting, plt_vector3f_multiply_scalar(lighting2, weights.z)); \
+		*(py + offset) = plt_color8_multiply_vector3f(plt_texture_get_pixel(texture, tex_coord), lighting); \
 	} \
 } \
 bc_x = simd_int4_add(bc_x, bc_increment_x);
@@ -192,6 +196,10 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 				Plt_Vector2f uv0 = data_buffer->uv0[entry.index];
 				Plt_Vector2f uv1 = data_buffer->uv1[entry.index];
 				Plt_Vector2f uv2 = data_buffer->uv2[entry.index];
+
+				Plt_Vector3f lighting0 = data_buffer->lighting0[entry.index];
+				Plt_Vector3f lighting1 = data_buffer->lighting1[entry.index];
+				Plt_Vector3f lighting2 = data_buffer->lighting2[entry.index];
 				
 				simd_int4 bc_y = simd_int4_add(simd_int4_add(bc_initial, simd_int4_multiply(bc_increment_y, simd_int4_create_scalar(bin_region.y))), simd_int4_multiply(bc_increment_x, simd_int4_create_scalar(bin_region.x)));
 				Plt_Color8 *py = pixel_initial;
