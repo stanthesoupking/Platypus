@@ -3,26 +3,44 @@
 #include "platypus/platypus.h"
 #include <math.h>
 
-#define Plt_Object_Type_Spinning_Platypus 1
-void _spinning_platypus_update(Plt_Object *object, void *type_data, Plt_Frame_State state) {
-	object->transform = plt_transform_rotate(object->transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 0.0005f * state.delta_time, 0}));
-	object->transform.translation.y += sinf(state.application_time * 0.0025f) * 0.005f;
+#define PLT_COMPONENT_SPINNING "spinning"
+void _spinning_update(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state) {
+	
+	Plt_Transform transform = plt_world_entity_get_transform(world, entity_id);
+	
+	transform = plt_transform_rotate(transform, plt_quaternion_create_from_euler((Plt_Vector3f){0, 0.0005f * state.delta_time, 0}));
+	transform.translation.y += sinf(state.application_time * 0.0025f) * 0.005f;
+	
+	plt_world_entity_set_transform(world, entity_id, transform);
+}
+void plt_register_spinning_component(Plt_World *world) {
+	plt_world_register_component(world, PLT_COMPONENT_SPINNING, 0, NULL, _spinning_update, NULL, NULL);
 }
 
-#define Plt_Object_Type_FPS_Viewer 2
-typedef struct Plt_Object_Type_FPS_Viewer_Data {
+#define PLT_COMPONENT_FPS_VIEWER "fps_viewer"
+typedef struct Plt_Component_FPS_Viewer_Data {
 	Plt_Font *font;
-} Plt_Object_Type_FPS_Viewer_Data;
-
-void _fps_viewer_render_ui(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer) {
-	Plt_Object_Type_FPS_Viewer_Data *data = type_data;
+} Plt_Component_FPS_Viewer_Data;
+void _fps_viewer_render_ui(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer) {
+	Plt_Component_FPS_Viewer_Data *data = instance_data;
 	char text[32];
 	sprintf(text, "FPS:%d", (int)(1000 / state.delta_time));
 	plt_renderer_direct_draw_text(renderer, (Plt_Vector2i){0, 0}, data->font, text);
 }
+void plt_register_fps_viewer_component(Plt_World *world) {
+	plt_world_register_component(world, PLT_COMPONENT_FPS_VIEWER, sizeof(Plt_Component_FPS_Viewer_Data), NULL, NULL, NULL, _fps_viewer_render_ui);
+}
+void plt_component_fps_viewer_set_font(Plt_World *world, Plt_Entity_ID entity_id, Plt_Font *font) {
+	Plt_Component_FPS_Viewer_Data *data = plt_world_get_component_instance_data(world, entity_id, PLT_COMPONENT_FPS_VIEWER);
+	if (!data) {
+		return;
+	}
+	
+	data->font = font;
+}
 
 int main(int argc, char **argv) {
-	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 2, Plt_Application_Option_None);
+	Plt_Application *app = plt_application_create("Platypus - Spinning Platypus", 860, 640, 1, Plt_Application_Option_None);
 	Plt_Renderer *renderer = plt_application_get_renderer(app);
 	
 	// Load assets
@@ -35,89 +53,35 @@ int main(int argc, char **argv) {
 	Plt_Texture *lava_texture = plt_texture_load("assets/lava.png");
 
 	// Create world
-	const unsigned int type_descriptor_count = 2;
-	Plt_Object_Type_Descriptor type_descriptors[2] = {
-		{ // Spinning Weapon
-			.id = Plt_Object_Type_Spinning_Platypus,
-			.data_size = 0,
-			.update = _spinning_platypus_update,
-			.render_scene = NULL,
-			.render_ui = NULL
-		},
-		{ // FPS Viewer
-			.id = Plt_Object_Type_FPS_Viewer,
-			.data_size = sizeof(Plt_Object_Type_FPS_Viewer_Data),
-			.update = NULL,
-			.render_scene = NULL,
-			.render_ui = _fps_viewer_render_ui
-		}
-	};
-	
-	Plt_World *world = plt_world_create(128, type_descriptors, type_descriptor_count);
+	Plt_World *world = plt_world_create();
+	plt_register_spinning_component(world);
+	plt_register_fps_viewer_component(world);
 	plt_application_set_world(app, world);
 	
 	// Create world objects
-	Plt_Object *fps_viewer = plt_object_create(world, NULL, Plt_Object_Type_FPS_Viewer, "FPS Viewer");
-	{
-		Plt_Object_Type_FPS_Viewer_Data *fps_viewer_data = fps_viewer->type_data;
-		fps_viewer_data->font = font;
-	}
-
-	Plt_Object *platypus_object = plt_object_create(world, NULL, Plt_Object_Type_Spinning_Platypus, "Platypus");
-	platypus_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){ PLT_PI, 0, 0 });
-	platypus_object->transform.scale = (Plt_Vector3f){ 0.5f, 0.5f, 0.5f };
-
-	Plt_Object *platypus_mesh_renderer = plt_object_create(world, platypus_object, Plt_Object_Type_Mesh_Renderer, "Platypus Mesh Renderer");
-	{
-		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = platypus_mesh_renderer->type_data;
-		mesh_type_data->mesh = platypus_mesh;
-		mesh_type_data->texture = platypus_texture;
-	}
-
-	Plt_Object *platypus_collider = plt_object_create(world, platypus_object, Plt_Object_Type_Collider, "Platypus Collider");
-	platypus_collider->transform.translation.y = -0.1f;
-	{
-		Plt_Object_Type_Collider_Data *collider_data = platypus_collider->type_data;
-		collider_data->shape_type = Plt_Shape_Type_Box;
-		collider_data->box_shape.size = (Plt_Vector3f){ 1.0f, 0.7f, 5.5f };
-	}
+	Plt_Entity_ID platypus_entity = plt_world_create_entity(world, "platypus", PLT_ENTITY_ID_NONE);
+	plt_world_entity_set_transform(world, platypus_entity, plt_transform_create(plt_vector3f_make(0, 0, 0), plt_quaternion_create_from_euler(plt_vector3f_make(PLT_PI, 0, 0)), plt_vector3f_make(0.5f, 0.5f, 0.5f)));
+	plt_world_entity_add_component(world, platypus_entity, PLT_COMPONENT_MESH_RENDERER);
+	plt_component_mesh_renderer_set_mesh(world, platypus_entity, platypus_mesh);
+	plt_component_mesh_renderer_set_texture(world, platypus_entity, platypus_texture);
+	plt_world_entity_add_component(world, platypus_entity, PLT_COMPONENT_SPINNING);
+	plt_world_entity_add_component(world, platypus_entity, PLT_COMPONENT_COLLIDER);
+	plt_component_collider_set_box_shape(world, platypus_entity, plt_shape_box_make(plt_vector3f_make(1, 1, 1)));
 	
-	Plt_Object *weapon_object = plt_object_create(world, platypus_object, Plt_Object_Type_Collider, "Weapon");
-	weapon_object->transform.translation = (Plt_Vector3f){0.45f, -0.5f, 1.0f};
-	weapon_object->transform.rotation = plt_quaternion_create_from_euler((Plt_Vector3f){0, plt_math_deg2rad(-90.0f), plt_math_deg2rad(20.0f)});
-	weapon_object->transform.scale = (Plt_Vector3f){0.4f, 0.4f, 0.4f};
-	{
-		Plt_Object_Type_Collider_Data *collider_data = weapon_object->type_data;
-		collider_data->shape_type = Plt_Shape_Type_Box;
-		collider_data->box_shape.size = (Plt_Vector3f){ 5.0f, 1.0f, 0.7f };
-	}
-
-	Plt_Object *weapon_mesh_renderer = plt_object_create(world, weapon_object, Plt_Object_Type_Mesh_Renderer, "Weapon Mesh Renderer");
-	{
-		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = weapon_mesh_renderer->type_data;
-		mesh_type_data->mesh = gun_mesh;
-		mesh_type_data->texture = gun_texture;
-	}
+	Plt_Entity_ID terrain_entity = plt_world_create_entity(world, "terrain", PLT_ENTITY_ID_NONE);
+	plt_world_entity_set_transform(world, terrain_entity, plt_transform_create(plt_vector3f_make(0, 0, 0), plt_quaternion_create_from_euler(plt_vector3f_make(0, 0, 0)), plt_vector3f_make(1, 1, 1)));
+	plt_world_entity_add_component(world, terrain_entity, PLT_COMPONENT_MESH_RENDERER);
+	plt_component_mesh_renderer_set_mesh(world, terrain_entity, terrain_mesh);
+	plt_component_mesh_renderer_set_texture(world, terrain_entity, lava_texture);
 	
-	Plt_Object *terrain_object = plt_object_create(world, NULL, Plt_Object_Type_Mesh_Renderer, "Terrain");
-	{
-		Plt_Object_Type_Mesh_Renderer_Data *mesh_type_data = terrain_object->type_data;
-		mesh_type_data->mesh = terrain_mesh;
-		mesh_type_data->texture = lava_texture;
-	}
+	Plt_Entity_ID camera_entity = plt_world_create_entity(world, "camera", PLT_ENTITY_ID_NONE);
+	plt_world_entity_set_transform(world, camera_entity, plt_transform_create(plt_vector3f_make(0, -0.5f, 5.0f), plt_quaternion_create_from_euler(plt_vector3f_make(0, 0, 0)), plt_vector3f_make(1.0f, 1.0f, 1.0f)));
+	plt_world_entity_add_component(world, camera_entity, "flying_camera_controller");
+	plt_world_entity_add_component(world, camera_entity, PLT_COMPONENT_CAMERA);
 	
-	Plt_Object *flying_camera_object = plt_object_create(world, NULL, Plt_Object_Type_Flying_Camera_Controller, "Flying Camera");
-	flying_camera_object->transform.translation = (Plt_Vector3f){ 0.0f, -0.5f, 5.0f };
-	{
-		Plt_Object_Type_Flying_Camera_Controller_Data *flying_camera_type_data = flying_camera_object->type_data;
-		flying_camera_type_data->speed = 5.0f;
-	}
-	
-	Plt_Object *camera_object = plt_object_create(world, flying_camera_object, Plt_Object_Type_Camera, "Main Camera");
-	Plt_Object_Type_Camera_Data *camera_type_data = camera_object->type_data;
-	camera_type_data->fov = plt_math_deg2rad(150.0f);
-	camera_type_data->near_z = 0.1f;
-	camera_type_data->far_z = 100.0f;
+	Plt_Entity_ID fps_viewer = plt_world_create_entity(world, "fps_viewer", PLT_ENTITY_ID_NONE);
+	plt_world_entity_add_component(world, fps_viewer, PLT_COMPONENT_FPS_VIEWER);
+	plt_component_fps_viewer_set_font(world, fps_viewer, font);
 
 	// Application run loop
 	while (!plt_application_should_close(app)) {
@@ -133,7 +97,7 @@ int main(int argc, char **argv) {
 	plt_texture_destroy(&lava_texture);
 	plt_font_destroy(&font);
 	plt_application_destroy(&app);
-	plt_world_destroy(&world);
+	plt_world_destroy(world);
 
 	return 0;
 }

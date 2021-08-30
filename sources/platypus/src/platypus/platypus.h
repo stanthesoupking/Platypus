@@ -68,6 +68,9 @@ typedef struct Plt_Shape_Box {
 	Plt_Vector3f size;
 } Plt_Shape_Box;
 
+Plt_Shape_Sphere plt_shape_sphere_make(float radius);
+Plt_Shape_Box plt_shape_box_make(Plt_Vector3f size);
+
 // Values defined in row-major format
 Plt_Matrix4x4f plt_matrix_identity();
 Plt_Matrix4x4f plt_matrix_zero();
@@ -80,6 +83,7 @@ Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate);
 
 Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z);
 
+Plt_Transform plt_transform_create(Plt_Vector3f translation, Plt_Quaternion rotation, Plt_Vector3f scale);
 Plt_Transform plt_transform_invert(Plt_Transform transform);
 Plt_Matrix4x4f plt_transform_to_matrix(Plt_Transform transform);
 Plt_Transform plt_transform_translate(Plt_Transform transform, Plt_Vector3f translation);
@@ -156,21 +160,7 @@ Plt_Color8 plt_color8_multiply(Plt_Color8 a, Plt_Color8 b);
 Plt_Color8 plt_color8_multiply_scalar(Plt_Color8 color, float s);
 Plt_Color8 plt_color8_blend(Plt_Color8 a, Plt_Color8 b);
 
-// MARK: Type-Object System
-
-typedef struct Plt_World Plt_World;
-
-typedef struct Plt_Object Plt_Object;
-typedef unsigned int Plt_Object_Type_ID;
-typedef struct Plt_Object {
-	Plt_World *world;
-	Plt_Object_Type_ID type;
-
-	const char *name;
-	Plt_Transform transform;
-
-	void *type_data;
-} Plt_Object;
+// MARK: ECS
 
 typedef struct Plt_Input_State Plt_Input_State;
 typedef struct Plt_Frame_State {
@@ -183,53 +173,105 @@ typedef struct Plt_Frame_State {
 	Plt_Input_State *input_state;
 } Plt_Frame_State;
 
+#define PLT_WORLD_ENTITY_CAPACITY 8192
+#define PLT_WORLD_COMPONENT_CAPACITY 64
+
+typedef unsigned int Plt_Entity_ID;
+typedef unsigned int Plt_Component_ID;
+
+#define PLT_ENTITY_ID_NONE 0
+
+typedef struct Plt_Entity {
+	Plt_Entity_ID id;
+	Plt_Entity_ID parent;
+	unsigned long long components;
+	const char *name;
+	Plt_Transform transform;
+} Plt_Entity;
+
+typedef struct Plt_Component_Table_Entry {
+	Plt_Entity_ID entity_id;
+	char instance_data[];
+} Plt_Component_Table_Entry;
+
+typedef struct Plt_Component_Table {
+	unsigned int entry_count;
+	Plt_Component_Table_Entry *entries;
+} Plt_Component_Table;
+
+typedef struct Plt_World Plt_World;
 typedef struct Plt_Renderer Plt_Renderer;
-typedef struct Plt_Object_Type_Descriptor {
-	Plt_Object_Type_ID id;
+typedef struct Plt_Component {
+	const char *name;
+
+	Plt_Component_ID id;
 	unsigned int data_size;
 
-	void (*update)(Plt_Object *object, void *type_data, Plt_Frame_State state);
-	void (*render_scene)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
-	void (*render_ui)(Plt_Object *object, void *type_data, Plt_Frame_State state, Plt_Renderer *renderer);
-} Plt_Object_Type_Descriptor;
+	Plt_Component_Table table;
 
-Plt_World *plt_world_create(unsigned int object_storage_capacity, Plt_Object_Type_Descriptor *type_descriptors, unsigned int type_descriptor_count);
-void plt_world_destroy(Plt_World **world);
+	void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data);
+	void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state);
+	void (*render_scene)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer);
+	void (*render_ui)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer);
+} Plt_Component;
 
-Plt_Object *plt_world_get_object_at_path(Plt_World *world, const char *path);
-Plt_Object *plt_world_get_object_of_type(Plt_World *world, Plt_Object_Type_ID type);
-void plt_world_get_objects_of_type(Plt_World *world, Plt_Object_Type_ID type, Plt_Object **result, unsigned int result_capacity, unsigned int *result_count);
+typedef struct Plt_World {
+	Plt_Entity_ID current_entity_id;
+	Plt_Component_ID current_component_id;
 
+	unsigned int entity_count;
+	Plt_Entity entities[PLT_WORLD_ENTITY_CAPACITY];
 
-Plt_Object *plt_object_create(Plt_World *world, Plt_Object *parent, Plt_Object_Type_ID type, const char *name);
-void plt_object_destroy(Plt_Object **object);
+	unsigned int deferred_destroy_count;
+	Plt_Entity_ID deferred_destroy[PLT_WORLD_ENTITY_CAPACITY];
 
-Plt_Object *plt_object_get_object_at_path(Plt_Object *object, const char *path);
-Plt_Object *plt_object_get_child_object_of_type(Plt_Object *object, Plt_Object_Type_ID type);
-Plt_Object *plt_object_get_root(Plt_Object *object);
+	unsigned int component_count;
+	Plt_Component components[PLT_WORLD_COMPONENT_CAPACITY];
 
-Plt_Object *plt_object_get_parent(Plt_Object *object);
-void plt_object_set_parent(Plt_Object *object, Plt_Object *parent);
+	// Runtime state
+	bool is_updating;
+} Plt_World;
 
-Plt_Matrix4x4f plt_object_get_model_matrix(Plt_Object *object);
-Plt_Vector3f plt_object_get_global_position(Plt_Object *object);
-Plt_Object **plt_object_get_collisions(Plt_Object *object, unsigned int *collision_count);
+Plt_World *plt_world_create();
+void plt_world_destroy(Plt_World *world);
 
-Plt_Vector3f plt_object_get_forward(Plt_Object *object);
-Plt_Vector3f plt_object_get_up(Plt_Object *object);
-Plt_Vector3f plt_object_get_right(Plt_Object *object);
+void plt_world_update(Plt_World *world, Plt_Frame_State state);
+void plt_world_render_scene(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer);
+void plt_world_render_ui(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer);
 
-// MARK: Base Object Types
+Plt_Entity_ID plt_world_create_entity(Plt_World *world, const char *name, Plt_Entity_ID parent_id);
+void plt_world_destroy_entity(Plt_World *world, Plt_Entity_ID entity_id);
 
-#define PLT_BASE_TYPE_ID_OFFSET 512
-const static Plt_Object_Type_ID Plt_Object_Type_None = 0;
-const static Plt_Object_Type_ID Plt_Object_Type_Mesh_Renderer = PLT_BASE_TYPE_ID_OFFSET + 1;
-const static Plt_Object_Type_ID Plt_Object_Type_Billboard_Renderer = PLT_BASE_TYPE_ID_OFFSET + 2;
-const static Plt_Object_Type_ID Plt_Object_Type_Camera = PLT_BASE_TYPE_ID_OFFSET + 3;
-const static Plt_Object_Type_ID Plt_Object_Type_Flying_Camera_Controller = PLT_BASE_TYPE_ID_OFFSET + 4;
-const static Plt_Object_Type_ID Plt_Object_Type_Collider = PLT_BASE_TYPE_ID_OFFSET + 5;
+void plt_world_entity_add_component(Plt_World *world, Plt_Entity_ID entity_id, const char *component_name);
+void plt_world_entity_remove_component(Plt_World *world, Plt_Entity_ID entity_id, const char *component_name);
+
+void *plt_world_get_component_instance_data(Plt_World *world, Plt_Entity_ID entity_id, const char *component_name);
+
+Plt_Matrix4x4f plt_world_entity_get_model_matrix(Plt_World *world, Plt_Entity_ID entity_id);
+
+Plt_Vector3f plt_entity_get_forward(Plt_World *world, Plt_Entity_ID entity_id);
+Plt_Vector3f plt_entity_get_right(Plt_World *world, Plt_Entity_ID entity_id);
+Plt_Vector3f plt_entity_get_up(Plt_World *world, Plt_Entity_ID entity_id);
+
+Plt_Transform plt_world_entity_get_transform(Plt_World *world, Plt_Entity_ID entity_id);
+void plt_world_entity_set_transform(Plt_World *world, Plt_Entity_ID entity_id, Plt_Transform transform);
+
+const char *plt_world_entity_get_name(Plt_World *world, Plt_Entity_ID entity_id);
+void plt_world_entity_set_name(Plt_World *world, Plt_Entity_ID entity_id, const char *name);
+
+Plt_Entity_ID plt_world_entity_get_parent(Plt_World *world, Plt_Entity_ID entity_id);
+void plt_world_entity_set_parent(Plt_World *world, Plt_Entity_ID entity_id, Plt_Entity_ID parent_id);
+
+bool plt_world_get_entity_with_component(Plt_World *world, const char *component_name, Plt_Entity_ID *found);
+void plt_world_get_entities_with_component(Plt_World *world, const char *component_name, Plt_Entity_ID *result_entities, unsigned int *result_entity_count);
+
+void plt_world_register_component(Plt_World *world, const char *component_name, unsigned int data_size, void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data), void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state), void (*render_scene)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer), void (*render_ui)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer));
+
+// MARK: Base Components
 
 // Mesh Renderer
+#define PLT_COMPONENT_MESH_RENDERER "mesh_renderer"
+
 typedef struct Plt_Mesh Plt_Mesh;
 typedef struct Plt_Texture Plt_Texture;
 typedef struct Plt_Object_Type_Mesh_Renderer_Data {
@@ -238,6 +280,9 @@ typedef struct Plt_Object_Type_Mesh_Renderer_Data {
 	Plt_Color8 color;
 } Plt_Object_Type_Mesh_Renderer_Data;
 
+void plt_component_mesh_renderer_set_mesh(Plt_World *world, Plt_Entity_ID entity_id, Plt_Mesh *mesh);
+void plt_component_mesh_renderer_set_texture(Plt_World *world, Plt_Entity_ID entity_id, Plt_Texture *texture);
+
 // Billboard Renderer
 typedef struct Plt_Object_Type_Billboard_Renderer_Data {
 	Plt_Vector2f size;
@@ -245,6 +290,8 @@ typedef struct Plt_Object_Type_Billboard_Renderer_Data {
 } Plt_Object_Type_Billboard_Renderer_Data;
 
 // Camera
+#define PLT_COMPONENT_CAMERA "camera"
+
 typedef struct Plt_Object_Type_Camera_Data {
 	// Vertical FOV in radians
 	float fov;
@@ -253,6 +300,9 @@ typedef struct Plt_Object_Type_Camera_Data {
 	float near_z;
 	float far_z;
 } Plt_Object_Type_Camera_Data;
+
+Plt_Matrix4x4f plt_component_camera_get_view_matrix(Plt_World *world, Plt_Entity_ID entity_id);
+Plt_Matrix4x4f plt_component_camera_get_projection_matrix(Plt_World *world, Plt_Entity_ID entity_id, Plt_Size viewport);
 
 // Flying Camera Controller
 typedef struct Plt_Object_Type_Flying_Camera_Controller_Data {
@@ -263,6 +313,7 @@ typedef struct Plt_Object_Type_Flying_Camera_Controller_Data {
 } Plt_Object_Type_Flying_Camera_Controller_Data;
 
 // Collider
+#define PLT_COMPONENT_COLLIDER "collider"
 typedef struct Plt_Object_Type_Collider_Data {
 	Plt_Shape_Type shape_type;
 	union {
@@ -270,6 +321,9 @@ typedef struct Plt_Object_Type_Collider_Data {
 		Plt_Shape_Sphere sphere_shape;
 	};
 } Plt_Object_Type_Collider_Data;
+
+void plt_component_collider_set_box_shape(Plt_World *world, Plt_Entity_ID entity_id, Plt_Shape_Box box);
+void plt_component_collider_set_sphere_shape(Plt_World *world, Plt_Entity_ID entity_id, Plt_Shape_Sphere sphere);
 
 // MARK: Renderer
 

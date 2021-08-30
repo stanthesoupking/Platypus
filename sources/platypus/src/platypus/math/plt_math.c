@@ -4,6 +4,18 @@
 #include "platypus/base/plt_macros.h"
 #include "platypus/base/plt_simd.h"
 
+inline Plt_Shape_Sphere plt_shape_sphere_make(float radius) {
+	return (Plt_Shape_Sphere) {
+		.radius = radius
+	};
+}
+
+inline Plt_Shape_Box plt_shape_box_make(Plt_Vector3f size) {
+	return (Plt_Shape_Box) {
+		.size = size
+	};
+}
+
 inline Plt_Matrix4x4f plt_matrix_identity() {
 	return (Plt_Matrix4x4f) {{
 		{ 1, 0, 0, 0 },
@@ -150,6 +162,14 @@ Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float 
 		{0, 0, zs, near_z * zs},
 		{0, 0, -1, 0}
 	}};
+}
+
+Plt_Transform plt_transform_create(Plt_Vector3f translation, Plt_Quaternion rotation, Plt_Vector3f scale) {
+	return (Plt_Transform) {
+		.translation = translation,
+		.rotation = rotation,
+		.scale = scale
+	};
 }
 
 Plt_Transform plt_transform_invert(Plt_Transform transform) {
