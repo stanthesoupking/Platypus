@@ -71,7 +71,7 @@ void plt_world_update(Plt_World *world, Plt_Frame_State state) {
 	plt_world_update_finish(world);
 }
 
-void plt_world_render_scene(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer) {
+void plt_world_render(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer) {
 	plt_world_update_begin(world);
 	
 	// Update camera
@@ -83,34 +83,14 @@ void plt_world_render_scene(Plt_World *world, Plt_Frame_State state, Plt_Rendere
 
 	for (unsigned int i = 0; i < world->component_count; ++i) {		
 		Plt_Component component = world->components[i];
-		if (!component.render_scene) {
+		if (!component.render) {
 			continue;
 		}
 
 		Plt_Component_Table_Entry *entry = component.table.entries;
 		for (unsigned int j = 0; j < component.table.entry_count; ++j) {
 			//printf("Updating entity %d(%s)\n", entry->entity_id, component.name);
-			component.render_scene(world, entry->entity_id, entry->instance_data, state, renderer);
-			entry = (Plt_Component_Table_Entry *)(((char *)entry) + sizeof(Plt_Component_Table_Entry) + component.data_size);
-		}
-	}
-
-	plt_world_update_finish(world);
-}
-
-void plt_world_render_ui(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer) {
-	plt_world_update_begin(world);
-
-	for (unsigned int i = 0; i < world->component_count; ++i) {
-		Plt_Component component = world->components[i];
-		if (!component.render_ui) {
-			continue;
-		}
-
-		Plt_Component_Table_Entry *entry = component.table.entries;
-		for (unsigned int j = 0; j < component.table.entry_count; ++j) {
-			//printf("Updating entity %d(%s)\n", entry->entity_id, component.name);
-			component.render_ui(world, entry->entity_id, entry->instance_data, state, renderer);
+			component.render(world, entry->entity_id, entry->instance_data, state, renderer);
 			entry = (Plt_Component_Table_Entry *)(((char *)entry) + sizeof(Plt_Component_Table_Entry) + component.data_size);
 		}
 	}
@@ -357,7 +337,7 @@ void plt_world_get_entities_with_component(Plt_World *world, const char *compone
 }
 
 
-void plt_world_register_component(Plt_World *world, const char *component_name, unsigned int data_size, void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data), void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state), void (*render_scene)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer), void (*render_ui)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer)) {
+void plt_world_register_component(Plt_World *world, const char *component_name, unsigned int data_size, void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data), void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state), void (*render)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer)) {
 	// Verify that no components with this name already exist
 	for (unsigned int i = 0; i < world->component_count; ++i) {
 		if (strcmp(world->components[i].name, component_name) == 0) {
@@ -372,8 +352,7 @@ void plt_world_register_component(Plt_World *world, const char *component_name, 
 		.data_size = data_size,
 		.init = init,
 		.update = update,
-		.render_scene = render_scene,
-		.render_ui = render_ui,
+		.render = render,
 		.table = {
 			.entry_count = 0,
 			.entries = malloc(PLT_WORLD_ENTITY_CAPACITY * (data_size + sizeof(Plt_Component_Table_Entry)))

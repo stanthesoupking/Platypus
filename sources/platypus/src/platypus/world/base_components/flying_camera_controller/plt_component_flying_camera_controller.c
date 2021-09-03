@@ -47,5 +47,5 @@ void _flying_camera_controller_type_update(Plt_World *world, Plt_Entity_ID entit
 }
 
 void plt_register_flying_camera_component(Plt_World *world) {
-	plt_world_register_component(world, "flying_camera_controller", sizeof(Plt_Object_Type_Flying_Camera_Controller_Data), _flying_camera_controller_type_init, _flying_camera_controller_type_update, NULL, NULL);
+	plt_world_register_component(world, "flying_camera_controller", sizeof(Plt_Object_Type_Flying_Camera_Controller_Data), _flying_camera_controller_type_init, _flying_camera_controller_type_update, NULL);
 }

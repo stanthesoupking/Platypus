@@ -3,6 +3,30 @@
 #include "platypus/framebuffer/plt_framebuffer.h"
 #include "platypus/base/allocation/plt_linear_allocator.h"
 
+#define PLT_MAXIMUM_RENDERER_DRAW_CALLS 2048
+
+typedef enum Plt_Renderer_Draw_Call_Type {
+	Plt_Renderer_Draw_Call_Type_Draw_Mesh,
+	Plt_Renderer_Draw_Call_Type_Draw_Direct_Texture
+} Plt_Renderer_Draw_Call_Type;
+
+typedef struct Plt_Renderer_Draw_Call {
+	Plt_Renderer_Draw_Call_Type type;
+	Plt_Primitive_Type primitive_type;
+	
+	Plt_Matrix4x4f model;
+	Plt_Matrix4x4f view;
+	Plt_Matrix4x4f projection;
+	
+	Plt_Mesh *mesh;
+	Plt_Texture *texture;
+	Plt_Color8 color;
+	
+	Plt_Rect rect;
+	Plt_Vector2i texture_offset;
+	unsigned int depth;
+} Plt_Renderer_Draw_Call;
+
 typedef struct Plt_Vertex_Processor Plt_Vertex_Processor;
 typedef struct Plt_Triangle_Processor Plt_Triangle_Processor;
 typedef struct Plt_Triangle_Rasteriser Plt_Triangle_Rasteriser;
@@ -19,6 +43,9 @@ typedef struct Plt_Renderer {
 	float *depth_buffer;
 	unsigned int depth_buffer_width;
 	unsigned int depth_buffer_height;
+	
+	unsigned int draw_call_count;
+	Plt_Renderer_Draw_Call draw_calls[PLT_MAXIMUM_RENDERER_DRAW_CALLS];
 	
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
@@ -39,3 +66,4 @@ void plt_renderer_destroy(Plt_Renderer **renderer);
 
 void plt_renderer_update_framebuffer(Plt_Renderer *renderer, Plt_Framebuffer framebuffer);
 void plt_renderer_rasterise_triangles(Plt_Renderer *renderer);
+void plt_renderer_execute(Plt_Renderer *renderer);

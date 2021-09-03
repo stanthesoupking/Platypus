@@ -136,9 +136,8 @@ void plt_application_update(Plt_Application *application) {
 		plt_world_update(application->world, frame_state);
 
 		plt_renderer_clear(application->renderer, plt_color8_make(35,45,30,255));
-		plt_world_render_scene(application->world, frame_state, application->renderer);
-		plt_renderer_rasterise_triangles(application->renderer);
-		plt_world_render_ui(application->world, frame_state, application->renderer);
+		plt_world_render(application->world, frame_state, application->renderer);
+		plt_renderer_execute(application->renderer);
 		plt_renderer_present(application->renderer);
 	}
 

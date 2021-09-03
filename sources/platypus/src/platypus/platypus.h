@@ -211,8 +211,7 @@ typedef struct Plt_Component {
 
 	void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data);
 	void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state);
-	void (*render_scene)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer);
-	void (*render_ui)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer);
+	void (*render)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer);
 } Plt_Component;
 
 typedef struct Plt_World {
@@ -236,8 +235,7 @@ Plt_World *plt_world_create();
 void plt_world_destroy(Plt_World *world);
 
 void plt_world_update(Plt_World *world, Plt_Frame_State state);
-void plt_world_render_scene(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer);
-void plt_world_render_ui(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer);
+void plt_world_render(Plt_World *world, Plt_Frame_State state, Plt_Renderer *renderer);
 
 Plt_Entity_ID plt_world_create_entity(Plt_World *world, const char *name, Plt_Entity_ID parent_id);
 void plt_world_destroy_entity(Plt_World *world, Plt_Entity_ID entity_id);
@@ -265,7 +263,7 @@ void plt_world_entity_set_parent(Plt_World *world, Plt_Entity_ID entity_id, Plt_
 bool plt_world_get_entity_with_component(Plt_World *world, const char *component_name, Plt_Entity_ID *found);
 void plt_world_get_entities_with_component(Plt_World *world, const char *component_name, Plt_Entity_ID *result_entities, unsigned int *result_entity_count);
 
-void plt_world_register_component(Plt_World *world, const char *component_name, unsigned int data_size, void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data), void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state), void (*render_scene)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer), void (*render_ui)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer));
+void plt_world_register_component(Plt_World *world, const char *component_name, unsigned int data_size, void (*init)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data), void (*update)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state), void (*render)(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer));
 
 // MARK: Base Components
 

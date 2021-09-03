@@ -32,6 +32,8 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->projection_matrix =
 	renderer->mvp_matrix = plt_matrix_identity();
 	
+	renderer->draw_call_count = 0;
+	
 	renderer->point_size = 1;
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
 	renderer->lighting_model = Plt_Lighting_Model_Unlit;
@@ -97,59 +99,18 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	
 	// Clear triangle bins
 	plt_rasteriser_clear_triangle_bins(renderer->triangle_rasteriser);
-	
-//#ifdef PLT_PLATFORM_MACOS
-//	memset_pattern4(framebuffer.pixels, &clear_color, sizeof(Plt_Color8) * framebuffer.width * framebuffer.height);
-//#else
-//	int total_pixels = framebuffer.width * framebuffer.height;
-//	for(int i = 0; i < total_pixels; ++i) {
-//		framebuffer.pixels[i] = clear_color;
-//	}
-//#endif
-//
-//	if (renderer->depth_buffer) {
-//		float clear_depth = INFINITY;
-//#ifdef PLT_PLATFORM_MACOS
-//		memset_pattern4(renderer->depth_buffer, &clear_depth, sizeof(float) * renderer->depth_buffer_width * renderer->depth_buffer_height);
-//#else
-//		int total_depth_pixels = framebuffer.width * framebuffer.height;
-//		for (int i = 0; i < total_depth_pixels; ++i) {
-//			renderer->depth_buffer[i] = INFINITY;
-//		}
-//#endif
-}
-
-void plt_renderer_draw_mesh_points(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	for (unsigned int i = 0; i < mesh->vertex_count; i += 1) {
-		Plt_Vector4f pos = {
-			mesh->position_x[i],
-			mesh->position_y[i],
-			mesh->position_z[i],
-			1.0f
-		};
-		
-		pos = plt_matrix_multiply_vector4f(renderer->mvp_matrix, pos);
-		
-		// Discard behind the camera
-		if (pos.z < 0) {
-			return;
-		}
-		
-		Plt_Vector2f clip_xy = {pos.x / pos.w, pos.y / pos.w};
-		plt_renderer_draw_point(renderer, clip_xy, renderer->render_color);
-	}
 }
 
 void plt_renderer_plot_line_low(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {
-    int dx = p1.x - p0.x;
-    int dy = p1.y - p0.y;
+	int dx = p1.x - p0.x;
+	int dy = p1.y - p0.y;
 	int yi = 1;
 	if (dy < 0) {
 		yi = -1;
 		dy = -dy;
 	}
-    int d = (2 * dy) - dx;
-    int y = p0.y;
+	int d = (2 * dy) - dx;
+	int y = p0.y;
 	
 	for (int x = p0.x; x < p1.x; ++x) {
 		plt_renderer_poke_pixel(renderer, (Plt_Vector2i){x, y}, color);
@@ -157,21 +118,21 @@ void plt_renderer_plot_line_low(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vec
 			y += yi;
 			d += 2 * (dy - dx);
 		} else {
-        	d += 2 * dy;
+			d += 2 * dy;
 		}
 	}
 }
 
 void plt_renderer_plot_line_high(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {
-    int dx = p1.x - p0.x;
-    int dy = p1.y - p0.y;
+	int dx = p1.x - p0.x;
+	int dy = p1.y - p0.y;
 	int xi = 1;
 	if (dx < 0) {
 		xi = -1;
 		dx = -dx;
 	}
-    int d = 2 * dx - dy;
-    int x = p0.x;
+	int d = 2 * dx - dy;
+	int x = p0.x;
 	
 	plt_assert(dx >= 0, "dx is not greater than 0");
 
@@ -181,7 +142,7 @@ void plt_renderer_plot_line_high(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Ve
 			x += xi;
 			d += 2 * (dx - dy);
 		} else {
-        	d += 2 * dx;
+			d += 2 * dx;
 		}
 	}
 }
@@ -202,62 +163,145 @@ void plt_renderer_plot_line(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2
 	}
 }
 
-void plt_renderer_draw_mesh_lines(Plt_Renderer *renderer, Plt_Mesh *mesh) {
+void plt_renderer_execute_draw_call_draw_mesh(Plt_Renderer *renderer, Plt_Renderer_Draw_Call draw_call) {
 	Plt_Vector2i viewport = { renderer->framebuffer.width, renderer->framebuffer.height };
+	Plt_Matrix4x4f mvp = plt_matrix_multiply(draw_call.projection, plt_matrix_multiply(draw_call.view, draw_call.model));
 	
-	// Process vertices
-	plt_timer_start(vp_timer)
-	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
-	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
-
-	Plt_Color8 color = renderer->render_color;
-
-	// Draw lines
-	for (unsigned int i = 0; i < vp_result.vertex_count; i += 3) {
-		bool behind_camera = false;
-		bool on_screen = false;
-		Plt_Vector2i points[3];
-		for (unsigned int j = 0; j < 3; ++j) {
-			if (vp_result.clipspace_w[i + j] <= 0) {
-				behind_camera = true;
-				break;
-			}
+	switch (draw_call.primitive_type) {
+		case Plt_Primitive_Type_Triangle: {
+			Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, draw_call.mesh, viewport, draw_call.model, mvp);
+			plt_triangle_processor_process_vertex_data(renderer->triangle_processor, renderer->frame_allocator, viewport, draw_call.texture, vp_result, renderer->triangle_rasteriser);
+		} break;
 			
-			points[j].x = vp_result.screen_positions_x[i + j];
-			points[j].y = vp_result.screen_positions_y[i + j];
-			
-			if ((points[j].x > 0) && (points[j].x < renderer->framebuffer.width) && (points[j].y > 0) && (points[j].y < renderer->framebuffer.height)) {
-				on_screen = true;
-			}
-		}
-		
-		if (behind_camera || !on_screen) {
-			continue;
-		}
+		case Plt_Primitive_Type_Line: {
+			Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, draw_call.mesh, viewport, draw_call.model, mvp);
 
-		plt_renderer_plot_line(renderer, points[0], points[1], color);
-		plt_renderer_plot_line(renderer, points[1], points[2], color);
-		plt_renderer_plot_line(renderer, points[2], points[0], color);
+			// Draw lines
+			for (unsigned int i = 0; i < vp_result.vertex_count; i += 3) {
+				bool behind_camera = false;
+				bool on_screen = false;
+				Plt_Vector2i points[3];
+				for (unsigned int j = 0; j < 3; ++j) {
+					if (vp_result.clipspace_w[i + j] <= 0) {
+						behind_camera = true;
+						break;
+					}
+					
+					points[j].x = vp_result.screen_positions_x[i + j];
+					points[j].y = vp_result.screen_positions_y[i + j];
+					
+					if ((points[j].x > 0) && (points[j].x < renderer->framebuffer.width) && (points[j].y > 0) && (points[j].y < renderer->framebuffer.height)) {
+						on_screen = true;
+					}
+				}
+				
+				if (behind_camera || !on_screen) {
+					continue;
+				}
+
+				plt_renderer_plot_line(renderer, points[0], points[1], draw_call.color);
+				plt_renderer_plot_line(renderer, points[1], points[2], draw_call.color);
+				plt_renderer_plot_line(renderer, points[2], points[0], draw_call.color);
+			}
+		} break;
+			
+		case Plt_Primitive_Type_Point: {
+			for (unsigned int i = 0; i < draw_call.mesh->vertex_count; i += 1) {
+				Plt_Vector4f pos = {
+					draw_call.mesh->position_x[i],
+					draw_call.mesh->position_y[i],
+					draw_call.mesh->position_z[i],
+					1.0f
+				};
+				
+				pos = plt_matrix_multiply_vector4f(mvp, pos);
+				
+				// Discard behind the camera
+				if (pos.z < 0) {
+					return;
+				}
+				
+				Plt_Vector2f clip_xy = {pos.x / pos.w, pos.y / pos.w};
+				plt_renderer_draw_point(renderer, clip_xy, draw_call.color);
+			}
+		} break;
 	}
 }
 
-void plt_renderer_draw_mesh_triangles(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	plt_timer_start(draw_mesh_timer);
+void plt_renderer_execute_draw_call_draw_direct_texture(Plt_Renderer *renderer, Plt_Renderer_Draw_Call draw_call) {
+	Plt_Vector2i bounds_min = {
+		plt_clamp(draw_call.rect.x, 0, renderer->framebuffer.width),
+		plt_clamp(draw_call.rect.y, 0, renderer->framebuffer.height)
+	};
 
-	Plt_Vector2i viewport = { renderer->framebuffer.width, renderer->framebuffer.height };
-	
-	// Process vertices
-	plt_timer_start(vp_timer)
-	
-	Plt_Vertex_Processor_Result vp_result = plt_vertex_processor_process_mesh(renderer->vertex_processor, renderer->frame_allocator, renderer->lighting_setup, mesh, viewport, renderer->model_matrix, renderer->mvp_matrix);
-	plt_timer_end(vp_timer, "VERTEX_PROCESSOR")
+	Plt_Vector2i bounds_max = {
+		plt_clamp(draw_call.rect.x + draw_call.rect.width, 0, renderer->framebuffer.width),
+		plt_clamp(draw_call.rect.y + draw_call.rect.height, 0, renderer->framebuffer.height)
+	};
 
-	// Process triangles
-	plt_timer_start(tp_timer)
-	plt_triangle_processor_process_vertex_data(renderer->triangle_processor, renderer->frame_allocator, viewport, renderer->bound_texture, vp_result, renderer->triangle_rasteriser);
-	plt_timer_end(tp_timer, "TRIANGLE_PROCESSOR")
+	Plt_Color8 *pixels = renderer->framebuffer.pixels;
+	unsigned int row_length = renderer->framebuffer.width;
+		
+	Plt_Vector2i p_inc = { 1, 1 };
+	Plt_Vector2i tex_pos = draw_call.texture_offset;
+	for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
+		tex_pos.x = draw_call.texture_offset.x;
+		for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
+			Plt_Color8 pixel = plt_texture_get_pixel(draw_call.texture, tex_pos);
+			if (pixel.a == 255) {
+				pixels[y * row_length + x] = pixel;
+			} else if (pixel.a > 0) {
+				// Alpha blend
+				pixels[y * row_length + x] = plt_color8_blend(pixels[y * row_length + x], pixel);
+			}
+			tex_pos.x++;
+		}
+		tex_pos.y++;
+	}
+}
+
+void plt_renderer_execute_draw_call(Plt_Renderer *renderer, Plt_Renderer_Draw_Call draw_call) {
+	switch (draw_call.type) {
+		case Plt_Renderer_Draw_Call_Type_Draw_Mesh:
+			plt_renderer_execute_draw_call_draw_mesh(renderer, draw_call);
+			break;
+			
+		case Plt_Renderer_Draw_Call_Type_Draw_Direct_Texture:
+			plt_renderer_execute_draw_call_draw_direct_texture(renderer, draw_call);
+			break;
+	}
+}
+
+void plt_renderer_execute(Plt_Renderer *renderer) {
+	// Draw filled meshes first
+	for (unsigned int i = 0; i < renderer->draw_call_count; ++i) {
+		Plt_Renderer_Draw_Call call = renderer->draw_calls[i];
+		if ((call.type == Plt_Renderer_Draw_Call_Type_Draw_Mesh) && (call.primitive_type == Plt_Primitive_Type_Triangle)) {
+			plt_renderer_execute_draw_call(renderer, call);
+		}
+	}
+	plt_renderer_rasterise_triangles(renderer);
+	plt_linear_allocator_clear(renderer->frame_allocator);
 	
-	plt_timer_end(draw_mesh_timer, "DRAW_MESH");
+	// Draw every other scene element
+	for (unsigned int i = 0; i < renderer->draw_call_count; ++i) {
+		Plt_Renderer_Draw_Call call = renderer->draw_calls[i];
+		if ((call.type == Plt_Renderer_Draw_Call_Type_Draw_Mesh) && (call.primitive_type != Plt_Primitive_Type_Triangle)) {
+			plt_renderer_execute_draw_call(renderer, call);
+		}
+	}
+	plt_linear_allocator_clear(renderer->frame_allocator);
+	
+	// Draw direct calls
+	for (unsigned int i = 0; i < renderer->draw_call_count; ++i) {
+		Plt_Renderer_Draw_Call call = renderer->draw_calls[i];
+		if (call.type == Plt_Renderer_Draw_Call_Type_Draw_Direct_Texture) {
+			plt_renderer_execute_draw_call(renderer, renderer->draw_calls[i]);
+		}
+	}
+	plt_linear_allocator_clear(renderer->frame_allocator);
+		
+	renderer->draw_call_count = 0;
 }
 
 void plt_renderer_direct_draw_pixel(Plt_Renderer *renderer, Plt_Vector2i position, unsigned int depth, Plt_Color8 color) {
@@ -276,35 +320,16 @@ void plt_renderer_direct_draw_texture(Plt_Renderer *renderer, Plt_Rect rect, uns
 }
 
 void plt_renderer_direct_draw_texture_with_offset(Plt_Renderer *renderer, Plt_Rect rect, Plt_Vector2i texture_offset, unsigned int depth, Plt_Texture *texture) {
-	Plt_Vector2i bounds_min = {
-		plt_clamp(rect.x, 0, renderer->framebuffer.width),
-		plt_clamp(rect.y, 0, renderer->framebuffer.height)
-	};
-
-	Plt_Vector2i bounds_max = {
-		plt_clamp(rect.x + rect.width, 0, renderer->framebuffer.width),
-		plt_clamp(rect.y + rect.height, 0, renderer->framebuffer.height)
-	};
-
-	Plt_Color8 *pixels = renderer->framebuffer.pixels;
-	unsigned int row_length = renderer->framebuffer.width;
+	renderer->draw_calls[renderer->draw_call_count++] = (Plt_Renderer_Draw_Call) {
+		.type = Plt_Renderer_Draw_Call_Type_Draw_Direct_Texture,
 		
-	Plt_Vector2i p_inc = { 1, 1 };
-	Plt_Vector2i tex_pos = texture_offset;
-	for (unsigned int y = bounds_min.y; y < bounds_max.y; ++y) {
-		tex_pos.x = texture_offset.x;
-		for (unsigned int x = bounds_min.x; x < bounds_max.x; ++x) {
-			Plt_Color8 pixel = plt_texture_get_pixel(texture, tex_pos);
-			if (pixel.a == 255) {
-				pixels[y * row_length + x] = pixel;
-			} else if (pixel.a > 0) {
-				// Alpha blend
-				pixels[y * row_length + x] = plt_color8_blend(pixels[y * row_length + x], pixel);
-			}
-			tex_pos.x++;
-		}
-		tex_pos.y++;
-	}
+		.texture = texture,
+		.color = renderer->render_color,
+		
+		.rect = rect,
+		.texture_offset = texture_offset,
+		.depth = depth
+	};
 }
 
 void plt_renderer_direct_draw_scaled_texture(Plt_Renderer *renderer, Plt_Rect rect, unsigned int depth, Plt_Texture *texture) {
@@ -371,21 +396,18 @@ void plt_renderer_direct_draw_text(Plt_Renderer *renderer, Plt_Vector2i position
 }
 
 void plt_renderer_draw_mesh(Plt_Renderer *renderer, Plt_Mesh *mesh) {
-	Plt_Framebuffer framebuffer = renderer->framebuffer;
-	
-	switch (renderer->primitive_type) {
-		case Plt_Primitive_Type_Point:
-			plt_renderer_draw_mesh_points(renderer, mesh);
-			break;
-			
-		case Plt_Primitive_Type_Line:
-			plt_renderer_draw_mesh_lines(renderer, mesh);
-			break;
-			
-		case Plt_Primitive_Type_Triangle:
-			plt_renderer_draw_mesh_triangles(renderer, mesh);
-			break;
-	}
+	renderer->draw_calls[renderer->draw_call_count++] = (Plt_Renderer_Draw_Call) {
+		.type = Plt_Renderer_Draw_Call_Type_Draw_Mesh,
+		.primitive_type = renderer->primitive_type,
+		
+		.model = renderer->model_matrix,
+		.view = renderer->view_matrix,
+		.projection = renderer->projection_matrix,
+		
+		.mesh = mesh,
+		.texture = renderer->bound_texture,
+		.color = renderer->render_color
+	};
 }
 
 void plt_renderer_draw_billboard(Plt_Renderer *renderer, Plt_Vector2f size) {

@@ -11,5 +11,5 @@ void _billboard_renderer_type_render(Plt_World *world, Plt_Entity_ID entity_id, 
 }
 
 void plt_register_billboard_renderer_component(Plt_World *world) {
-	plt_world_register_component(world, "billboard_renderer", sizeof(Plt_Object_Type_Billboard_Renderer_Data), NULL, NULL, _billboard_renderer_type_render, NULL);
+	plt_world_register_component(world, "billboard_renderer", sizeof(Plt_Object_Type_Billboard_Renderer_Data), NULL, NULL, _billboard_renderer_type_render);
 }

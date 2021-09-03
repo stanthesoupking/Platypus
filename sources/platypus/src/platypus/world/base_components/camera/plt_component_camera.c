@@ -12,7 +12,7 @@ void _camera_init(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data
 }
 
 void plt_register_camera_component(Plt_World *world) {
-	plt_world_register_component(world, PLT_COMPONENT_CAMERA, sizeof(Plt_Object_Type_Camera_Data), _camera_init, NULL, NULL, NULL);
+	plt_world_register_component(world, PLT_COMPONENT_CAMERA, sizeof(Plt_Object_Type_Camera_Data), _camera_init, NULL, NULL);
 }
 
 Plt_Matrix4x4f plt_component_camera_get_view_matrix(Plt_World *world, Plt_Entity_ID entity_id) {

@@ -14,21 +14,21 @@ void _spinning_update(Plt_World *world, Plt_Entity_ID entity_id, void *instance_
 	plt_world_entity_set_transform(world, entity_id, transform);
 }
 void plt_register_spinning_component(Plt_World *world) {
-	plt_world_register_component(world, PLT_COMPONENT_SPINNING, 0, NULL, _spinning_update, NULL, NULL);
+	plt_world_register_component(world, PLT_COMPONENT_SPINNING, 0, NULL, _spinning_update, NULL);
 }
 
 #define PLT_COMPONENT_FPS_VIEWER "fps_viewer"
 typedef struct Plt_Component_FPS_Viewer_Data {
 	Plt_Font *font;
 } Plt_Component_FPS_Viewer_Data;
-void _fps_viewer_render_ui(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer) {
+void _fps_viewer_render(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state, Plt_Renderer *renderer) {
 	Plt_Component_FPS_Viewer_Data *data = instance_data;
 	char text[32];
 	sprintf(text, "FPS:%d", (int)(1000 / state.delta_time));
 	plt_renderer_direct_draw_text(renderer, (Plt_Vector2i){0, 0}, data->font, text);
 }
 void plt_register_fps_viewer_component(Plt_World *world) {
-	plt_world_register_component(world, PLT_COMPONENT_FPS_VIEWER, sizeof(Plt_Component_FPS_Viewer_Data), NULL, NULL, NULL, _fps_viewer_render_ui);
+	plt_world_register_component(world, PLT_COMPONENT_FPS_VIEWER, sizeof(Plt_Component_FPS_Viewer_Data), NULL, NULL, _fps_viewer_render);
 }
 void plt_component_fps_viewer_set_font(Plt_World *world, Plt_Entity_ID entity_id, Plt_Font *font) {
 	Plt_Component_FPS_Viewer_Data *data = plt_world_get_component_instance_data(world, entity_id, PLT_COMPONENT_FPS_VIEWER);
