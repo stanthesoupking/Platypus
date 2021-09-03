@@ -6,7 +6,7 @@
 
 void _camera_init(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data) {
 	Plt_Object_Type_Camera_Data *data = instance_data;
-	data->fov = plt_math_deg2rad(150.0f);
+	data->fov = plt_math_deg2rad(70.0f);
 	data->near_z = 0.1f;
 	data->far_z = 100.0f;
 }

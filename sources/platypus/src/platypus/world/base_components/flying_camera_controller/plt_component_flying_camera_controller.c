@@ -4,7 +4,7 @@
 
 void _flying_camera_controller_type_init(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data) {
 	Plt_Object_Type_Flying_Camera_Controller_Data *data = instance_data;
-	data->speed = 2.0f;
+	data->speed = 1.0f;
 }
 
 void _flying_camera_controller_type_update(Plt_World *world, Plt_Entity_ID entity_id, void *instance_data, Plt_Frame_State state) {
@@ -27,11 +27,11 @@ void _flying_camera_controller_type_update(Plt_World *world, Plt_Entity_ID entit
 	}
 
 	if (pressed & Plt_Key_A) {
-		transform.translation = plt_vector3f_add(transform.translation, plt_vector3f_multiply_scalar(right, -adjusted_speed * 0.5f));
+		transform.translation = plt_vector3f_add(transform.translation, plt_vector3f_multiply_scalar(right, -adjusted_speed));
 	}
 
 	if (pressed & Plt_Key_D) {
-		transform.translation = plt_vector3f_add(transform.translation, plt_vector3f_multiply_scalar(right, adjusted_speed * 0.5f));
+		transform.translation = plt_vector3f_add(transform.translation, plt_vector3f_multiply_scalar(right, adjusted_speed));
 	}
 
 	Plt_Vector2f mouse_movement = plt_input_state_get_mouse_movement(state.input_state);

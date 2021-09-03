@@ -152,16 +152,20 @@ Plt_Matrix4x4f plt_matrix_rotate_make(Plt_Vector3f rotate) {
 }
 
 Plt_Matrix4x4f plt_matrix_perspective_make(float aspect_ratio, float fov, float near_z, float far_z) {
-	float ys = 1 / tanf(fov * 0.5);
-	float xs = ys / aspect_ratio;
-	float zs = far_z / (near_z - far_z);
+	float f, fn;
+
+	Plt_Matrix4x4f m = {};
+
+	f  = 1.0f / tanf(fov * 0.5f);
+	fn = 1.0f / (near_z - far_z);
+
+	m.columns[0][0] = f / aspect_ratio;
+	m.columns[1][1] = f;
+	m.columns[2][2] = far_z * fn;
+	m.columns[2][3] = -1.0f;
+	m.columns[3][2] = near_z * far_z * fn;
 	
-	return (Plt_Matrix4x4f) {{
-		{xs, 0, 0, 0},
-		{0, ys, 0, 0},
-		{0, 0, zs, near_z * zs},
-		{0, 0, -1, 0}
-	}};
+	return m;
 }
 
 Plt_Transform plt_transform_create(Plt_Vector3f translation, Plt_Quaternion rotation, Plt_Vector3f scale) {
@@ -203,15 +207,13 @@ Plt_Transform plt_transform_scale(Plt_Transform transform, Plt_Vector3f scale) {
 }
 
 Plt_Vector4f plt_matrix_multiply_vector4f(Plt_Matrix4x4f m, Plt_Vector4f v) {
-	simd_float4 va = simd_float4_create(v.x, v.y, v.z, v.w);
-	
 	// TODO: Optimise this
 	simd_float4 result = simd_float4_create_scalar(0.0f);
 	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[0]), simd_float4_create_scalar(v.x));
 	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[1]), simd_float4_create_scalar(v.y));
 	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[2]), simd_float4_create_scalar(v.z));
 	result = simd_float4_multiply_add(result, simd_float4_load(m.columns[3]), simd_float4_create_scalar(v.w));
-	
+
 	return (Plt_Vector4f){result.x, result.y, result.z, result.w};
 }
 
