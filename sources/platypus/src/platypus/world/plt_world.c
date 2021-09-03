@@ -243,16 +243,15 @@ void plt_world_entity_remove_component(Plt_World *world, Plt_Entity_ID entity_id
 }
 
 Plt_Matrix4x4f plt_world_entity_get_model_matrix(Plt_World *world, Plt_Entity_ID entity_id) {
-	Plt_Entity *entity = plt_world_get_entity(world, entity_id);
-	if (!entity) {
-		return plt_matrix_identity();
+	Plt_Matrix4x4f matrix = plt_matrix_identity();
+	
+	while (entity_id != PLT_ENTITY_ID_NONE) {
+		Plt_Entity *entity = plt_world_get_entity(world, entity_id);
+		matrix = plt_matrix_multiply(plt_transform_to_matrix(entity->transform), matrix);
+		entity_id = entity->parent;
 	}
 	
-	if (entity->parent == PLT_ENTITY_ID_NONE) {
-		return plt_transform_to_matrix(entity->transform);
-	} else {
-		return plt_matrix_multiply(plt_world_entity_get_model_matrix(world, entity->parent), plt_transform_to_matrix(entity->transform));
-	}
+	return matrix;
 }
 
 Plt_Vector3f plt_entity_get_forward(Plt_World *world, Plt_Entity_ID entity_id) {
