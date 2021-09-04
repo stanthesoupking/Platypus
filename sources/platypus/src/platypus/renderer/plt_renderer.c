@@ -33,6 +33,8 @@ Plt_Renderer *plt_renderer_create(Plt_Application *application, Plt_Framebuffer 
 	renderer->mvp_matrix = plt_matrix_identity();
 	
 	renderer->draw_call_count = 0;
+
+	renderer->clear_color = plt_color8_make(0, 0, 0, 255);
 	
 	renderer->point_size = 1;
 	renderer->primitive_type = Plt_Primitive_Type_Triangle;
@@ -99,6 +101,7 @@ void plt_renderer_clear(Plt_Renderer *renderer, Plt_Color8 clear_color) {
 	
 	// Clear triangle bins
 	plt_rasteriser_clear_triangle_bins(renderer->triangle_rasteriser);
+	renderer->clear_color = clear_color;
 }
 
 void plt_renderer_plot_line_low(Plt_Renderer *renderer, Plt_Vector2i p0, Plt_Vector2i p1, Plt_Color8 color) {

@@ -135,7 +135,7 @@ void plt_application_update(Plt_Application *application) {
 	if (application->world) {
 		plt_world_update(application->world, frame_state);
 
-		plt_renderer_clear(application->renderer, plt_color8_make(35,45,30,255));
+		plt_renderer_clear(application->renderer, application->clear_color);
 		plt_world_render(application->world, frame_state, application->renderer);
 		plt_renderer_execute(application->renderer);
 		plt_renderer_present(application->renderer);
@@ -192,6 +192,10 @@ SDL_Window *plt_application_get_sdl_window(Plt_Application *application) {
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application) {
 	return application->renderer;
+}
+
+void plt_application_set_clear_color(Plt_Application *application, Plt_Color8 clear_color) {
+	application->clear_color = clear_color;
 }
 
 void plt_application_set_world(Plt_Application *application, Plt_World *world) {

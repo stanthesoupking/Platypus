@@ -50,6 +50,7 @@ typedef struct Plt_Renderer {
 	Plt_Primitive_Type primitive_type;
 	unsigned int point_size;
 	Plt_Lighting_Model lighting_model;
+	Plt_Color8 clear_color;
 	Plt_Color8 render_color;	
 	Plt_Lighting_Setup lighting_setup;
 	

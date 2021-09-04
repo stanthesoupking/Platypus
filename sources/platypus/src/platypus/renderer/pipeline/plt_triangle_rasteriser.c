@@ -3,6 +3,7 @@
 #include "platypus/base/thread/plt_thread.h"
 #include "platypus/base/thread/plt_thread_safe_stack.h"
 #include "platypus/framebuffer/plt_framebuffer.h"
+#include "platypus/renderer/plt_renderer.h"
 #include "platypus/base/plt_defines.h"
 #include "platypus/base/plt_macros.h"
 
@@ -125,7 +126,7 @@ void *_raster_thread(unsigned int thread_id, void *thread_data) {
 	float *depth_buffer = rasteriser->depth_buffer;
 	Plt_Size viewport_size = rasteriser->viewport_size;
 	
-	Plt_Color8 clear_color = plt_color8_make(100, 120, 160, 255);
+	Plt_Color8 clear_color = renderer->clear_color;
 	
 	const Plt_Color8 debug_colors[6] = {
 		plt_color8_make(0, 255, 0, 255),

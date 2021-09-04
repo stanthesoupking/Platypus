@@ -393,6 +393,8 @@ void plt_application_update(Plt_Application *application);
 
 Plt_Renderer *plt_application_get_renderer(Plt_Application *application);
 
+void plt_application_set_clear_color(Plt_Application *application, Plt_Color8 clear_color);
+
 void plt_application_set_world(Plt_Application *application, Plt_World *world);
 Plt_World *plt_application_get_world(Plt_Application *application);
 
