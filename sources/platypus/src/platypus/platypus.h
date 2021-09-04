@@ -303,6 +303,8 @@ Plt_Matrix4x4f plt_component_camera_get_view_matrix(Plt_World *world, Plt_Entity
 Plt_Matrix4x4f plt_component_camera_get_projection_matrix(Plt_World *world, Plt_Entity_ID entity_id, Plt_Size viewport);
 
 // Flying Camera Controller
+#define PLT_COMPONENT_FLYING_CAMERA_CONTROLLER "flying_camera_controller"
+
 typedef struct Plt_Object_Type_Flying_Camera_Controller_Data {
 	float speed;
 
