@@ -468,7 +468,3 @@ Plt_Matrix4x4f plt_quaternion_to_matrix(Plt_Quaternion q) {
 
 	return m;
 }
-
-bool plt_box_intersection(Plt_Matrix4x4f matrix_a, Plt_Matrix4x4f matrix_b, Plt_Shape_Box box_a, Plt_Shape_Box box_b) {
-	
-}

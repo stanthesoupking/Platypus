@@ -22,7 +22,7 @@ Plt_Matrix4x4f plt_component_camera_get_view_matrix(Plt_World *world, Plt_Entity
 Plt_Matrix4x4f plt_component_camera_get_projection_matrix(Plt_World *world, Plt_Entity_ID entity_id, Plt_Size viewport) {
 	Plt_Object_Type_Camera_Data *data = plt_world_get_component_instance_data(world, entity_id, PLT_COMPONENT_CAMERA);
 	if (!data) {
-		return;
+		return plt_matrix_identity();
 	}
 	
 	float aspect_ratio = viewport.width / (float)viewport.height;
